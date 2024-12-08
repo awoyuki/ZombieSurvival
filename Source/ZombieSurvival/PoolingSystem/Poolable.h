@@ -25,8 +25,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Poolable")
 	void OnSpawnFromPool();
+	virtual void OnSpawnFromPool_Implementation();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="Poolable")
 	void OnReturnToPool();
+	virtual void OnReturnToPool_Implementation();
 
 };

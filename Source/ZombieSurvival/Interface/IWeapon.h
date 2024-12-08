@@ -30,8 +30,6 @@ public:
 	virtual void GetOwner(AZS_Player* &Owner);
 
 	UFUNCTION()
-	virtual void OnEquippedWeapon(AZS_Player* NewOwner);
-
-
+	virtual void OnEquippedWeapon(AZS_Player* NewOwner, FWeaponDataStruct NewWeaponData);
 
 };

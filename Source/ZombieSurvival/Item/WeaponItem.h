@@ -19,7 +19,14 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponItem();
 
+	// Mag vizual
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UStaticMeshComponent* MagMeshComponent;
+
 	// Stored Data
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName MagSocketName = TEXT("mag_socket");
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FWeaponDataStruct WeaponData;
 
@@ -32,4 +39,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void OnItemSpawn() override;
+
+	virtual void OnPlayerOverlap(AActor* PlayerActor) override;
 };

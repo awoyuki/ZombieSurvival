@@ -47,7 +47,7 @@ void AZombieSurvivalPlayerController::SetupInputComponent()
 	{
 		// Setup mouse input events
 		EnhancedInputComponent->BindAction(InputMoveAction, ETriggerEvent::Triggered, this, &AZombieSurvivalPlayerController::OnPlayerMove);
-		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Triggered, this, &AZombieSurvivalPlayerController::OnPlayerMouseTrigger);
+		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Started, this, &AZombieSurvivalPlayerController::OnPlayerMouseStart);
 		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Completed, this, &AZombieSurvivalPlayerController::OnPlayerMouseEnd);
 		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Canceled, this, &AZombieSurvivalPlayerController::OnPlayerMouseEnd);
 	}
@@ -73,10 +73,10 @@ void AZombieSurvivalPlayerController::OnPlayerMove(const FInputActionValue& valu
 	}
 }
 
-void AZombieSurvivalPlayerController::OnPlayerMouseTrigger()
+void AZombieSurvivalPlayerController::OnPlayerMouseStart()
 {
 	if (ICharacter == nullptr) return;
-	ICharacter->OnPlayerMouseTrigger();
+	ICharacter->OnPlayerMouseStart();
 }
 
 void AZombieSurvivalPlayerController::OnPlayerMouseEnd()
@@ -128,12 +128,12 @@ FVector AZombieSurvivalPlayerController::GetMouseLocation()
 	// Looking for the mouse location in the world
 	FHitResult Hit;
 	bool bHitSuccessful = false;
-	bHitSuccessful = GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, Hit);
+	bHitSuccessful = GetHitResultUnderCursor(ECC_Visibility, true, Hit);
 	FVector MousePosition = FVector::ZeroVector;
 	// If we hit a surface, cache the location
 	if (bHitSuccessful)
 	{
-		MousePosition = Hit.Location;
+		MousePosition = Hit.ImpactPoint;
 	}
 
 	return MousePosition;

@@ -21,11 +21,35 @@ void AZS_Player::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void AZS_Player::OnPlayerMouseTrigger()
+void AZS_Player::OnPlayerMouseStart()
 {
+	if (!IsValid(CurrentWeapon)) return;
+
+	if(CurrentWeapon->WeaponData.WeaponType == WeaponType::AssaultRifle)
+		CurrentWeapon->WeaponFire();
+
 }
 
 void AZS_Player::OnPlayerMouseEnd()
 {
+	if (!IsValid(CurrentWeapon)) return;
+
+	if (CurrentWeapon->WeaponData.WeaponType == WeaponType::AssaultRifle)
+		CurrentWeapon->WeaponEndFire();
+}
+
+void AZS_Player::OnPlayerFiringWeapon(FWeaponDataStruct WeaponData)
+{
+	PlayAnimMontage(WeaponData.FireAnimation,1,NAME_None);
+}
+
+
+
+void AZS_Player::PickupWeapon(AWeaponBase* NewWeapon)
+{
+	NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
+	Weapons.Add(NewWeapon);
+	CurrentWeapon = NewWeapon;
+	NewWeapon->SetOwner(this);
 }
 

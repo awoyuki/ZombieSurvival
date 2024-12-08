@@ -67,6 +67,25 @@ float AZombieSurvivalCharacter::GetMovementOffset()
 	return GetCameraBoom()->GetRelativeRotation().Yaw;
 }
 
+float AZombieSurvivalCharacter::PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 0, FName StartSectionName = NAME_None)
+{
+	UAnimInstance* AnimInstance = (GetMesh()) ? GetMesh()->GetAnimInstance() : nullptr;
+	if (AnimMontage && AnimInstance)
+	{
+		float const Duration = AnimInstance->Montage_Play(AnimMontage, InPlayRate);
+		if (Duration > 0.f)
+		{
+			// Start at a given Section.
+			if (StartSectionName != NAME_None)
+			{
+				AnimInstance->Montage_JumpToSection(StartSectionName, AnimMontage);
+			}
+			return Duration;
+		}
+	}
+	return 0.f;
+}
+
 
 
 

@@ -27,10 +27,16 @@ public:
 	virtual float GetMovementOffset();
 
 	UFUNCTION()
-	virtual void OnPlayerMouseTrigger();
+	virtual void OnPlayerMouseStart();
 
 	UFUNCTION()
 	virtual void OnPlayerMouseEnd();
+
+	UFUNCTION()
+	virtual void OnPlayerFiringWeapon(FWeaponDataStruct WeaponData);
+
+	UFUNCTION()
+	virtual void OnPlayerChangeWeapon();
 
 
 };

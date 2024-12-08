@@ -14,11 +14,19 @@ public:
 	// Sets default values for this character's properties
 	AZS_Player();
 
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FName WeaponSocket = TEXT("weapon_r_socket");
+
 	// Current Weapon in use
-	int CurrentWeaponIndex;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	AWeaponBase* CurrentWeapon;
+
 	// List of weapon
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<AWeaponBase*> Weapons;
+
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -27,9 +35,13 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	void PickupWeapon(AWeaponBase* NewWeapon);
 	
-	virtual void OnPlayerMouseTrigger() override;
+	virtual void OnPlayerMouseStart() override;
 
 	virtual void OnPlayerMouseEnd() override;
+
+	virtual void OnPlayerFiringWeapon(FWeaponDataStruct WeaponData) override;
 
 };

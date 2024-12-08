@@ -3,4 +3,10 @@
 
 #include "Poolable.h"
 
-// Add default functionality here for any IPoolable functions that are not pure virtual.
+void IPoolable::OnSpawnFromPool_Implementation()
+{
+}
+
+void IPoolable::OnReturnToPool_Implementation()
+{
+}

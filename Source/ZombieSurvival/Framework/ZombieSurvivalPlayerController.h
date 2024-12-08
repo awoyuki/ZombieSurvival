@@ -51,7 +51,7 @@ protected:
 
 	void OnPlayerMove(const FInputActionValue& value);
 
-	void OnPlayerMouseTrigger();
+	void OnPlayerMouseStart();
 
 	void OnPlayerMouseEnd();
 

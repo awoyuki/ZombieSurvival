@@ -35,6 +35,8 @@ public:
 
 	virtual float GetMovementOffset() override;
 
+protected:
+	float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName);
 
 };
 
