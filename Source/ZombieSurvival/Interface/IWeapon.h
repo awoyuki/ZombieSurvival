@@ -3,7 +3,6 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "ZombieSurvival/Framework/ZombieSurvivalCharacter.h"
 #include "IWeapon.generated.h"
 
 /*
@@ -27,11 +26,11 @@ class IIWeapon
 public:
 	// Add interface function declarations here
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Component)
-	void GetOwner(AZombieSurvivalCharacter* &Owner);
+	UFUNCTION()
+	virtual void GetOwner(AZS_Player* &Owner);
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Action)
-	void OnEquippedWeapon();
+	UFUNCTION()
+	virtual void OnEquippedWeapon(AZS_Player* NewOwner);
 
 
 

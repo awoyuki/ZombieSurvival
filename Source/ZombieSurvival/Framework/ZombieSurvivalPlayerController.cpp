@@ -25,11 +25,7 @@ void AZombieSurvivalPlayerController::BeginPlay()
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
 		Subsystem->AddMappingContext(DefaultMappingContext, 0);
-	}
-
-	if (AZombieSurvivalCharacter* ZSCharacter = CastChecked<AZombieSurvivalCharacter>(GetCharacter()))
-	{
-		MovementOffset = ZSCharacter->GetCameraBoom()->GetRelativeRotation().Yaw;
+		ICharacter = CastChecked<IICharacter>(GetCharacter());
 	}
 
 }
@@ -51,6 +47,9 @@ void AZombieSurvivalPlayerController::SetupInputComponent()
 	{
 		// Setup mouse input events
 		EnhancedInputComponent->BindAction(InputMoveAction, ETriggerEvent::Triggered, this, &AZombieSurvivalPlayerController::OnPlayerMove);
+		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Triggered, this, &AZombieSurvivalPlayerController::OnPlayerMouseTrigger);
+		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Completed, this, &AZombieSurvivalPlayerController::OnPlayerMouseEnd);
+		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Canceled, this, &AZombieSurvivalPlayerController::OnPlayerMouseEnd);
 	}
 }
 
@@ -61,7 +60,8 @@ void AZombieSurvivalPlayerController::OnPlayerMove(const FInputActionValue& valu
 	APawn* ControlledPawn = GetPawn();
 
 	const FRotator Rotation = GetControlRotation();
-	const FRotator YawRotation(0, Rotation.Yaw + MovementOffset, 0);
+	const float Offset = ICharacter ? ICharacter->GetMovementOffset() : 0;
+	const FRotator YawRotation(0, Rotation.Yaw + Offset, 0);
 
 	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
@@ -71,8 +71,18 @@ void AZombieSurvivalPlayerController::OnPlayerMove(const FInputActionValue& valu
 		ControlledPawn->AddMovementInput(ForwardDirection, InputVector.X, false);
 		ControlledPawn->AddMovementInput(RightDirection, InputVector.Y, false);
 	}
+}
 
+void AZombieSurvivalPlayerController::OnPlayerMouseTrigger()
+{
+	if (ICharacter == nullptr) return;
+	ICharacter->OnPlayerMouseTrigger();
+}
 
+void AZombieSurvivalPlayerController::OnPlayerMouseEnd()
+{
+	if (ICharacter == nullptr) return;
+	ICharacter->OnPlayerMouseEnd();
 }
 
 void AZombieSurvivalPlayerController::FixPlayerRotation()

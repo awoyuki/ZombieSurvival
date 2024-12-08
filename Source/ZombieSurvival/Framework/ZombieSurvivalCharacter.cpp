@@ -61,5 +61,12 @@ void AZombieSurvivalCharacter::Tick(float DeltaSeconds)
 
 }
 
+float AZombieSurvivalCharacter::GetMovementOffset()
+{
+	//Movementoffset base on Camera
+	return GetCameraBoom()->GetRelativeRotation().Yaw;
+}
+
+
 
 

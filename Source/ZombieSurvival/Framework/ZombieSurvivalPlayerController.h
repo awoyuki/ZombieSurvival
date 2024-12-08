@@ -8,6 +8,7 @@
 #include "InputActionValue.h"
 #include "EnhancedInputComponent.h"
 #include "ZombieSurvivalCharacter.h"
+#include "ZombieSurvival/Interface/ICharacter.h"
 #include "ZombieSurvivalPlayerController.generated.h"
 
 /** Forward declaration to improve compiling times */
@@ -29,13 +30,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	class UInputAction* InputMoveAction;
 
+	/** Move Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	class UInputAction* InputMouseAction;
+
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Property)
 	double AngularDistanceBetweenPlayerAndCursor();
 
-protected:
+	/** Chacacter Comunication */
+	IICharacter* ICharacter;
 
-	//Movementoffset base on Camera
-	float MovementOffset = 0;
+protected:
 
 	virtual void SetupInputComponent() override;
 
@@ -45,6 +50,10 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 	void OnPlayerMove(const FInputActionValue& value);
+
+	void OnPlayerMouseTrigger();
+
+	void OnPlayerMouseEnd();
 
 	void FixPlayerRotation();
 

@@ -4,7 +4,7 @@
 #include "GameFramework/Character.h"
 #include "ZS_ZombieBase.generated.h"
 
-UCLASS()
+UCLASS(Blueprintable)
 class ZOMBIESURVIVAL_API AZS_ZombieBase : public ACharacter
 {
 	GENERATED_BODY()
