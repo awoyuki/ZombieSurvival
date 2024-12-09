@@ -19,13 +19,7 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponItem();
 
-	// Mag vizual
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UStaticMeshComponent* MagMeshComponent;
-
-	// Stored Data
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FName MagSocketName = TEXT("mag_socket");
+	FTimerHandle RotateTimeHandle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UWeaponData* WeaponData;
@@ -33,6 +27,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	virtual void RotateMesh();
 
 public:
 	// Called every frame

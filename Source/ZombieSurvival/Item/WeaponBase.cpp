@@ -1,6 +1,6 @@
 #include "WeaponBase.h"
+#include "ZombieSurvival/Character/ZS_Player.h"
 #include "Particles/ParticleSystemComponent.h"
-#include "ZombieSurvival/Interface/ICharacter.h"
 #include "Sound/SoundCue.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -16,31 +16,22 @@ AWeaponBase::AWeaponBase()
 	WeaponMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMeshComponent"));
 	WeaponMeshComponent->SetCollisionProfileName(TEXT("NoCollision"));
 	SetRootComponent(WeaponMeshComponent);
-	MagMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MagMeshComponent"));
-	MagMeshComponent->SetCollisionProfileName(TEXT("NoCollision"));
-	MagMeshComponent->SetupAttachment(WeaponMeshComponent);
 
 	MuzzleVFX = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("MuzzleVFX"));
 	MuzzleVFX->SetupAttachment(WeaponMeshComponent);
 	MuzzleVFX->SetAutoActivate(false);
-
-
-}
+	}
 
 // Called when the game starts or when spawned
 void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
-	ZSGameState = Cast<AZombieSurvivalGameState>(GetWorld()->GetGameState());
+	ZSGameState = Cast<AZombieSurvivalGameState>(GetWorld()->GetGameState()); 
 }
 
 void AWeaponBase::PlayerAction()
 {
-	if (Owner->GetClass()->ImplementsInterface(UICharacter::StaticClass()))
-	{
-		IICharacter* Player = Cast<IICharacter>(Owner);
-		Player->OnPlayerInteractWithWeapon(WeaponData, WeaponState);
-	}
+	ZSPlayer->OnPlayerInteractWithWeapon(WeaponData, WeaponState);
 }
 
 
@@ -53,32 +44,38 @@ void AWeaponBase::Tick(float DeltaTime)
 
 void AWeaponBase::OnEquippedWeapon(AZS_Player* NewOwner, UWeaponData* NewWeaponData)
 {
+	ZSPlayer = CastChecked<AZS_Player>(Owner);
+	ZSPlayerState = Cast<AZombieSurvivalPlayerState>(ZSPlayer->GetPlayerState());
+
+	WeaponState = EWeaponState::Holding;
 	WeaponData = NewWeaponData;
+
 	if (IsValid(WeaponData->WeaponMesh)) 
 	{
-		WeaponMeshComponent->SetStaticMesh(WeaponData->WeaponMesh);
-		if (WeaponMeshComponent->DoesSocketExist(WeaponData->MagSocketName))
-			MagMeshComponent->SetRelativeTransform(WeaponMeshComponent->GetSocketTransform(WeaponData->MagSocketName, RTS_Component));
+		WeaponMeshComponent->SetStaticMesh(WeaponData->WeaponMesh);		
 		if (WeaponMeshComponent->DoesSocketExist(MuzzleSocket)) 
 		{
 			MuzzleVFX->SetRelativeTransform(WeaponMeshComponent->GetSocketTransform(MuzzleSocket, RTS_Component));
 		}
 	}
-	if (IsValid(WeaponData->WeaponMagMesh))
-	{
-		MagMeshComponent->SetStaticMesh(WeaponData->WeaponMagMesh);
-	}
+
 	if (IsValid(WeaponData->BulletMuzzle))
 	{
 		MuzzleVFX->SetTemplate(WeaponData->BulletMuzzle);
 	}
 
-	WeaponState = EWeaponState::Holding;
+	const UObject* WorldContextObject = GetWorld();
+	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, ZSGameState->DataController->CommonData->PickupWeapon, GetActorLocation());
 
 	// Default Ammo 
 	CurrentAmmo = WeaponData->AmmoPerMag;
-	if(!WeaponData->bIsInfiniteAmmo)
-		TotalAmmo = WeaponData->AmmoPerMag * 3;
+}
+
+void AWeaponBase::OnSwitchWeapon()
+{
+	WeaponState = EWeaponState::Holding;
+	const UObject* WorldContextObject = GetWorld();
+	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, ZSGameState->DataController->CommonData->SwitchWeapon, GetActorLocation());
 }
 
 void AWeaponBase::WeaponFire()
@@ -115,7 +112,7 @@ void AWeaponBase::FiringWeapon()
 		//Minus Ammo
 		if (CurrentAmmo <= 0)
 		{
-			if (TotalAmmo > 0 || WeaponData->bIsInfiniteAmmo)
+			if (ZSPlayerState->GetTotalAmmo(WeaponData->WeaponType) > 0 || WeaponData->bIsInfiniteAmmo)
 				StartReloadWeapon();
 			else
 				WeaponFireEmpty();
@@ -161,7 +158,7 @@ void AWeaponBase::WeaponFireOnLineTrace()
 	if (bHitSuccessful)
 	{
 		TraceEnd = MouseHit.ImpactPoint;
-		TraceEnd.Z = TraceStart.Z;
+		TraceEnd.Z = TraceStart.Z - 10.0f;
 		FVector NewDirection = TraceEnd - TraceStart;
 		TraceEnd = ((NewDirection.Dot(GetActorForwardVector()) > 1) ? 1 : -1) * (TraceEnd - TraceStart) * 1000;
 	}
@@ -197,7 +194,7 @@ void AWeaponBase::WeaponFireOnLineTrace()
 			if (isHitEnemy) 
 			{
 				AController* PlayerController = Owner->GetInstigatorController();
-				UGameplayStatics::ApplyDamage(Hit.GetActor(), WeaponData->BaseDamage, PlayerController, this, nullptr);
+				UGameplayStatics::ApplyPointDamage(Hit.GetActor(), WeaponData->BaseDamage,Hit.ImpactPoint, Hit, PlayerController, this, nullptr);
 			}
 		}
 	}
@@ -231,8 +228,9 @@ void AWeaponBase::ReloadWeapon()
 	if(WeaponData->bIsInfiniteAmmo)
 		CurrentAmmo = WeaponData->AmmoPerMag;
 	else {
-		CurrentAmmo = fmin(TotalAmmo, WeaponData->AmmoPerMag);
-		TotalAmmo = fmax(TotalAmmo - CurrentAmmo, 0);
+
+		CurrentAmmo = fmin(ZSPlayerState->GetTotalAmmo(WeaponData->WeaponType), WeaponData->AmmoPerMag);
+		ZSPlayerState->CalculateAmmo(WeaponData->WeaponType, WeaponData->AmmoPerMag);
 	}
 	WeaponState = EWeaponState::Holding;
 	if (isFiringCached) {

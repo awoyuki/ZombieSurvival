@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputActionValue.h"
 #include "GameFramework/Character.h"
-#include "ZombieSurvival/Interface/ICharacter.h"
 #include "ZombieSurvivalCharacter.generated.h"
 
 UCLASS(Blueprintable)
-class AZombieSurvivalCharacter : public ACharacter, public IICharacter
+class AZombieSurvivalCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -33,10 +33,43 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 
-	virtual float GetMovementOffset() override;
+	/** MappingContext */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputMappingContext* DefaultMappingContext;
+
+	/** Move Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* InputMoveAction;
+
+	/** Mouse Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* InputMouseAction;
+
+	/** Mouse Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* InputChangeWeaponAction;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Property)
+	double AngularDistanceBetweenPlayerAndCursor();
 
 protected:
+
+	APlayerController* PlayerController;
+
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
 	float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName);
 
+	virtual void OnPlayerMove(const FInputActionValue& value);
+
+	virtual void OnPlayerMouseStart();
+
+	virtual void OnPlayerMouseEnd();
+
+	virtual void OnPlayerChangeWeapon();
+
+	virtual void FixPlayerRotation();
+
+	FVector GetMouseLocation();
 };
 

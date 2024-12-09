@@ -19,6 +19,11 @@ void UPoolSubsystem::ReturnToPool(AActor* Poolable)
 	{
 		IPoolable::Execute_OnReturnToPool(Poolable);
 		FPoolArray* ObjectPool = ObjectPools.Find(PoolableClass);
+		if (ObjectPool == nullptr)
+		{
+			ObjectPools.Add(PoolableClass);
+			ObjectPool = ObjectPools.Find(PoolableClass);
+		}
 		ObjectPool->Add(Poolable);
 		Poolable->SetActorEnableCollision(false);
 		Poolable->SetActorHiddenInGame(true);

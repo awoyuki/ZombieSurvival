@@ -1,6 +1,7 @@
 #include "ZS_Player.h"
 #include "ZombieSurvival/PoolingSystem/PoolSubsystem.h"
 
+
 // Sets default values
 AZS_Player::AZS_Player()
 {
@@ -19,6 +20,8 @@ void AZS_Player::BeginPlay()
 
 	//GetDefaultWeapon
 	ZSGameState = Cast<AZombieSurvivalGameState>(GetWorld()->GetGameState());
+	ZSPlayerState = Cast<AZombieSurvivalPlayerState>(GetPlayerState());
+
 	UWeaponData* DefWeaponData = ZSGameState->DataController->DefaultWeaponData;
 	if (DefWeaponData == nullptr)
 		return;
@@ -51,6 +54,14 @@ void AZS_Player::OnPlayerMouseEnd()
 
 	if (CurrentWeapon->WeaponData->WeaponType == EWeaponType::AssaultRifle)
 		CurrentWeapon->WeaponEndFire();
+}
+
+void AZS_Player::OnPlayerChangeWeapon()
+{
+	int NewWeaponIndex = Weapons.FindLast(CurrentWeapon);
+	NewWeaponIndex = (NewWeaponIndex + 1) % Weapons.Num();
+	CurrentWeapon = Weapons[NewWeaponIndex];
+	CurrentWeapon->OnSwitchWeapon();
 }
 
 void AZS_Player::OnPlayerInteractWithWeapon(UWeaponData* WeaponData, EWeaponState State)

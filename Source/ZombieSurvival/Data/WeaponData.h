@@ -14,7 +14,6 @@ UENUM(BlueprintType)
 enum class EWeaponType : uint8
 {
 	AssaultRifle UMETA(DisplayName = "Assault Rifle"),
-	BurstRifle UMETA(DisplayName = "Burst Rifle"),
 	GrenadeLauncher UMETA(DisplayName = "Grenade Launcher")
 };
 
@@ -37,12 +36,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	class UStaticMesh* WeaponMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	class UStaticMesh* WeaponMagMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	FName MagSocketName = TEXT("mag_socket");
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	float BaseDamage;

@@ -7,6 +7,7 @@
 #include "ZombieSurvival/Data/WeaponData.h"
 #include "ZombieSurvival/PoolingSystem/Poolable.h"
 #include "ZombieSurvival/Framework/ZombieSurvivalGameState.h"
+#include "ZombieSurvival/Framework/ZombieSurvivalPlayerState.h"
 #include "WeaponBase.generated.h"
 
 UENUM()
@@ -19,7 +20,7 @@ enum class EWeaponState
 };
 
 UCLASS()
-class ZOMBIESURVIVAL_API AWeaponBase : public AActor, public IIWeapon, public IPoolable
+class ZOMBIESURVIVAL_API AWeaponBase : public AActor, public IPoolable
 {
 	GENERATED_BODY()
 	
@@ -30,8 +31,6 @@ public:
 
 	// Weapon Components
 	UStaticMeshComponent* WeaponMeshComponent;
-
-	UStaticMeshComponent* MagMeshComponent;
 
 	FName MuzzleSocket = TEXT("muzzle_socket");
 
@@ -44,12 +43,16 @@ public:
 	FTimerHandle FireTimerHandle;
 	FTimerHandle ReloadTimerHandle;
 	EWeaponState WeaponState;
-	int32 CurrentAmmo;
-	int32 TotalAmmo;
 	bool isFiringCached;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int CurrentAmmo;
+
 
 	// Cached Game Variables
 	AZombieSurvivalGameState* ZSGameState;
+	AZombieSurvivalPlayerState* ZSPlayerState;
+	AZS_Player* ZSPlayer;
 
 private:
 
@@ -67,7 +70,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void OnEquippedWeapon(AZS_Player* NewOwner, UWeaponData* NewWeaponData) override;
+	virtual void OnEquippedWeapon(AZS_Player* NewOwner, UWeaponData* NewWeaponData);
+
+	virtual void OnSwitchWeapon();
 
 	void WeaponFire(); 
 

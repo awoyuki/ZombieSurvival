@@ -3,7 +3,9 @@
 #include "CoreMinimal.h"
 #include "ZombieSurvival/Item/WeaponBase.h"
 #include "ZombieSurvival/Framework/ZombieSurvivalCharacter.h"
+#include "ZombieSurvival/Framework/ZombieSurvivalPlayerState.h"
 #include "ZS_Player.generated.h"
+
 
 UCLASS(Blueprintable)
 class ZOMBIESURVIVAL_API AZS_Player : public AZombieSurvivalCharacter
@@ -29,6 +31,7 @@ public:
 
 	// Cached Game Variables
 	AZombieSurvivalGameState* ZSGameState;
+	AZombieSurvivalPlayerState* ZSPlayerState;
 
 protected:
 	// Called when the game starts or when spawned
@@ -46,6 +49,8 @@ public:
 
 	virtual void OnPlayerMouseEnd() override;
 
-	virtual void OnPlayerInteractWithWeapon(UWeaponData* WeaponData, EWeaponState State)override;
+	virtual void OnPlayerChangeWeapon() override;
+
+	virtual void OnPlayerInteractWithWeapon(UWeaponData* WeaponData, EWeaponState State);
 
 };

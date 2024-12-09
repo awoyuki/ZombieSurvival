@@ -7,9 +7,6 @@
 
 AWeaponItem::AWeaponItem()
 {
-	MagMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MagMeshComponent"));
-	MagMeshComponent->SetCollisionProfileName(TEXT("NoCollision"));
-	MagMeshComponent->SetupAttachment(MeshComponent);
 }
 
 void AWeaponItem::BeginPlay()
@@ -18,10 +15,15 @@ void AWeaponItem::BeginPlay()
 	OnItemSpawn();
 }
 
+void AWeaponItem::RotateMesh()
+{
+	AddActorWorldRotation(FRotator(0, 1, 0).Quaternion());
+}
+
 
 
 void AWeaponItem::Tick(float DeltaTime)
-{
+{	
 }
 
 void AWeaponItem::OnItemSpawn()
@@ -31,12 +33,7 @@ void AWeaponItem::OnItemSpawn()
 		MeshComponent->SetStaticMesh(WeaponData->WeaponMesh);
 		TriggerSphere->SetWorldLocation(MeshComponent->Bounds.GetSphere().Center);
 	}
-	if (IsValid(WeaponData->WeaponMagMesh))
-	{
-		if(MeshComponent->DoesSocketExist(WeaponData->MagSocketName))
-			MagMeshComponent->SetRelativeTransform(MeshComponent->GetSocketTransform(WeaponData->MagSocketName, RTS_ParentBoneSpace));
-		MagMeshComponent->SetStaticMesh(WeaponData->WeaponMagMesh);
-	}
+	GetWorldTimerManager().SetTimer(RotateTimeHandle, this, &AWeaponItem::RotateMesh, 0.01f, true, 0);
 }
 
 void AWeaponItem::OnPlayerOverlap(AActor* PlayerActor)

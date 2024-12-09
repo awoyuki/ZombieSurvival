@@ -1,5 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
+#include "Templates/SubclassOf.h"
 #include "ZombieSurvivalCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Camera/CameraComponent.h"
@@ -7,8 +8,10 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Materials/Material.h"
 #include "ZombieSurvivalPlayerController.h"
+#include "EnhancedInputSubsystems.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Materials/Material.h"
 #include "Engine/World.h"
 
 AZombieSurvivalCharacter::AZombieSurvivalCharacter()
@@ -49,7 +52,33 @@ AZombieSurvivalCharacter::AZombieSurvivalCharacter()
 void AZombieSurvivalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	PlayerController = Cast<APlayerController>(Controller);
+	//Add Input Mapping Context
+	if (IsValid(PlayerController))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+
 	
+}
+
+void AZombieSurvivalCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
+{
+	// set up gameplay key bindings
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	// Set up action bindings
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		// Setup mouse input events
+		EnhancedInputComponent->BindAction(InputMoveAction, ETriggerEvent::Triggered, this, &AZombieSurvivalCharacter::OnPlayerMove);
+		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Started, this, &AZombieSurvivalCharacter::OnPlayerMouseStart);
+		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Completed, this, &AZombieSurvivalCharacter::OnPlayerMouseEnd);
+		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Canceled, this, &AZombieSurvivalCharacter::OnPlayerMouseEnd);
+	}
 }
 
 
@@ -57,15 +86,9 @@ void AZombieSurvivalCharacter::BeginPlay()
 void AZombieSurvivalCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-
-
+	FixPlayerRotation();
 }
 
-float AZombieSurvivalCharacter::GetMovementOffset()
-{
-	//Movementoffset base on Camera
-	return GetCameraBoom()->GetRelativeRotation().Yaw;
-}
 
 float AZombieSurvivalCharacter::PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 0, FName StartSectionName = NAME_None)
 {
@@ -84,6 +107,83 @@ float AZombieSurvivalCharacter::PlayAnimMontage(class UAnimMontage* AnimMontage,
 		}
 	}
 	return 0.f;
+}
+
+
+
+void AZombieSurvivalCharacter::OnPlayerMove(const FInputActionValue& value)
+{
+	FVector2D InputVector = value.Get<FVector2D>();
+
+	const FRotator Rotation = GetControlRotation();
+	const float Offset = GetCameraBoom()->GetRelativeRotation().Yaw;
+	const FRotator YawRotation(0, Rotation.Yaw + Offset, 0);
+
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+	AddMovementInput(ForwardDirection, InputVector.X, false);
+	AddMovementInput(RightDirection, InputVector.Y, false);
+}
+
+void AZombieSurvivalCharacter::OnPlayerMouseStart()
+{
+}
+
+void AZombieSurvivalCharacter::OnPlayerMouseEnd()
+{
+}
+
+void AZombieSurvivalCharacter::OnPlayerChangeWeapon()
+{
+}
+
+void AZombieSurvivalCharacter::FixPlayerRotation()
+{
+	float rotateAngle = AngularDistanceBetweenPlayerAndCursor();
+	if (rotateAngle < -90 || rotateAngle > 90)
+	{
+		const FQuat newQuat = (FRotator(0, rotateAngle - (rotateAngle < -90 ? (-90) : 90), 0)).Quaternion();
+		AddActorLocalRotation(newQuat);
+	}
+}
+
+double AZombieSurvivalCharacter::AngularDistanceBetweenPlayerAndCursor()
+{
+	FVector PawnLocation = GetActorLocation();
+	FVector MouseLocation = GetMouseLocation();
+	MouseLocation.Z = PawnLocation.Z;
+
+	FVector TargetDirection = MouseLocation - PawnLocation;
+	double dotValue = GetActorRightVector().Dot(TargetDirection);
+
+	FRotator TargetRotator = UKismetMathLibrary::MakeRotFromX(TargetDirection);
+
+	// Convert FRotator to FQuat
+	FQuat ControllerQuat = GetActorRotation().Quaternion();
+	FQuat TargetQuat = TargetRotator.Quaternion();
+
+	double AngleRadians = ControllerQuat.AngularDistance(TargetQuat);
+	return UKismetMathLibrary::RadiansToDegrees(AngleRadians) * (dotValue > 0 ? 1 : -1);
+
+}
+
+FVector AZombieSurvivalCharacter::GetMouseLocation()
+{
+	// Looking for the mouse location in the world
+	FHitResult Hit;
+	bool bHitSuccessful = false;
+
+	if(IsValid(PlayerController))
+		bHitSuccessful = PlayerController->GetHitResultUnderCursor(ECC_Visibility, true, Hit);
+	FVector MousePosition = FVector::ZeroVector;
+	// If we hit a surface, cache the location
+	if (bHitSuccessful)
+	{
+		MousePosition = Hit.ImpactPoint;
+	}
+
+	return MousePosition;
 }
 
 
