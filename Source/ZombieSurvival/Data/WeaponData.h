@@ -19,13 +19,15 @@ enum class EWeaponType : uint8
 };
 
 
-USTRUCT(BlueprintType)
-struct FWeaponDataStruct
+UCLASS()
+class ZOMBIESURVIVAL_API UWeaponData : public UDataAsset
 {
 	GENERATED_BODY()
 
+public:
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	int32 ID;
+	int ID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	FName WeaponName;
@@ -41,6 +43,12 @@ struct FWeaponDataStruct
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	FName MagSocketName = TEXT("mag_socket");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	float BaseDamage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	class ABulletBase* BulletBase;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	int32 AmmoPerMag;
@@ -71,15 +79,4 @@ struct FWeaponDataStruct
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	class UParticleSystem* BulletTrailEffect;
-
-};
-
-UCLASS()
-class ZOMBIESURVIVAL_API UWeaponData : public UDataAsset
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	TArray<FWeaponDataStruct> WeaponDataArray;
 };

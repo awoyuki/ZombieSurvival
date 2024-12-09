@@ -26,16 +26,16 @@ void AWeaponItem::Tick(float DeltaTime)
 
 void AWeaponItem::OnItemSpawn()
 {
-	if (IsValid(WeaponData.WeaponMesh)) 
+	if (IsValid(WeaponData->WeaponMesh))
 	{
-		MeshComponent->SetStaticMesh(WeaponData.WeaponMesh);
+		MeshComponent->SetStaticMesh(WeaponData->WeaponMesh);
 		TriggerSphere->SetWorldLocation(MeshComponent->Bounds.GetSphere().Center);
 	}
-	if (IsValid(WeaponData.WeaponMagMesh)) 
+	if (IsValid(WeaponData->WeaponMagMesh))
 	{
-		if(MeshComponent->DoesSocketExist(WeaponData.MagSocketName))
-			MagMeshComponent->SetRelativeTransform(MeshComponent->GetSocketTransform(WeaponData.MagSocketName, RTS_ParentBoneSpace));
-		MagMeshComponent->SetStaticMesh(WeaponData.WeaponMagMesh);
+		if(MeshComponent->DoesSocketExist(WeaponData->MagSocketName))
+			MagMeshComponent->SetRelativeTransform(MeshComponent->GetSocketTransform(WeaponData->MagSocketName, RTS_ParentBoneSpace));
+		MagMeshComponent->SetStaticMesh(WeaponData->WeaponMagMesh);
 	}
 }
 

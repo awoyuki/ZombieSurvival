@@ -6,7 +6,7 @@ void IIWeapon::GetOwner(AZS_Player*& Owner)
 {
 }
 
-void IIWeapon::OnEquippedWeapon(AZS_Player* NewOwner, FWeaponDataStruct NewWeaponData)
+void IIWeapon::OnEquippedWeapon(AZS_Player* NewOwner, UWeaponData* NewWeaponData)
 {
 }
 

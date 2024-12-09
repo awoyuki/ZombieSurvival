@@ -24,7 +24,10 @@ public:
 	class UCommonData* CommonData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data Assets")
-	class UWeaponData* WeaponData;
+	class UWeaponData* DefaultWeaponData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data Assets")
+	TArray<class UWeaponData*> WeaponData;
 
 
 protected:

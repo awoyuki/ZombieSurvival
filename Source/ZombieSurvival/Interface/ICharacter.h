@@ -34,7 +34,7 @@ public:
 	virtual void OnPlayerMouseEnd();
 
 	UFUNCTION()
-	virtual void OnPlayerInteractWithWeapon(FWeaponDataStruct WeaponData, EWeaponState State);
+	virtual void OnPlayerInteractWithWeapon(UWeaponData* WeaponData, EWeaponState State);
 
 	UFUNCTION()
 	virtual void OnPlayerChangeWeapon();

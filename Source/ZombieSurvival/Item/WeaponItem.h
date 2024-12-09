@@ -28,7 +28,7 @@ public:
 	FName MagSocketName = TEXT("mag_socket");
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FWeaponDataStruct WeaponData;
+	UWeaponData* WeaponData;
 
 protected:
 	// Called when the game starts or when spawned

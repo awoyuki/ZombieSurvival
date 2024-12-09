@@ -51,34 +51,34 @@ void AWeaponBase::Tick(float DeltaTime)
 
 }
 
-void AWeaponBase::OnEquippedWeapon(AZS_Player* NewOwner, FWeaponDataStruct NewWeaponData)
+void AWeaponBase::OnEquippedWeapon(AZS_Player* NewOwner, UWeaponData* NewWeaponData)
 {
 	WeaponData = NewWeaponData;
-	if (IsValid(WeaponData.WeaponMesh)) 
+	if (IsValid(WeaponData->WeaponMesh)) 
 	{
-		WeaponMeshComponent->SetStaticMesh(WeaponData.WeaponMesh);
-		if (WeaponMeshComponent->DoesSocketExist(WeaponData.MagSocketName))
-			MagMeshComponent->SetRelativeTransform(WeaponMeshComponent->GetSocketTransform(WeaponData.MagSocketName, RTS_Component));
+		WeaponMeshComponent->SetStaticMesh(WeaponData->WeaponMesh);
+		if (WeaponMeshComponent->DoesSocketExist(WeaponData->MagSocketName))
+			MagMeshComponent->SetRelativeTransform(WeaponMeshComponent->GetSocketTransform(WeaponData->MagSocketName, RTS_Component));
 		if (WeaponMeshComponent->DoesSocketExist(MuzzleSocket)) 
 		{
 			MuzzleVFX->SetRelativeTransform(WeaponMeshComponent->GetSocketTransform(MuzzleSocket, RTS_Component));
 		}
 	}
-	if (IsValid(WeaponData.WeaponMagMesh)) 
+	if (IsValid(WeaponData->WeaponMagMesh))
 	{
-		MagMeshComponent->SetStaticMesh(WeaponData.WeaponMagMesh);
+		MagMeshComponent->SetStaticMesh(WeaponData->WeaponMagMesh);
 	}
-	if (IsValid(WeaponData.BulletMuzzle))
+	if (IsValid(WeaponData->BulletMuzzle))
 	{
-		MuzzleVFX->SetTemplate(WeaponData.BulletMuzzle);
+		MuzzleVFX->SetTemplate(WeaponData->BulletMuzzle);
 	}
 
 	WeaponState = EWeaponState::Holding;
 
 	// Default Ammo 
-	CurrentAmmo = WeaponData.AmmoPerMag;
-	if(!WeaponData.bIsInfiniteAmmo)
-		TotalAmmo = WeaponData.AmmoPerMag * 3;
+	CurrentAmmo = WeaponData->AmmoPerMag;
+	if(!WeaponData->bIsInfiniteAmmo)
+		TotalAmmo = WeaponData->AmmoPerMag * 3;
 }
 
 void AWeaponBase::WeaponFire()
@@ -87,7 +87,7 @@ void AWeaponBase::WeaponFire()
 	if (WeaponState == EWeaponState::Holding)
 	{
 		WeaponState = EWeaponState::Firing;
-		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AWeaponBase::FiringWeapon, WeaponData.FireRate, true, 0);
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AWeaponBase::FiringWeapon, WeaponData->FireRate, true, 0);
 	}
 
 }
@@ -115,7 +115,7 @@ void AWeaponBase::FiringWeapon()
 		//Minus Ammo
 		if (CurrentAmmo <= 0)
 		{
-			if (TotalAmmo > 0)
+			if (TotalAmmo > 0 || WeaponData->bIsInfiniteAmmo)
 				StartReloadWeapon();
 			else
 				WeaponFireEmpty();
@@ -123,7 +123,7 @@ void AWeaponBase::FiringWeapon()
 		else 
 		{
 			CurrentAmmo--;
-			if (WeaponData.WeaponType == EWeaponType::GrenadeLauncher)
+			if (WeaponData->WeaponType == EWeaponType::GrenadeLauncher)
 				WeaponFireOnSpawnProjectiles();
 			else
 				WeaponFireOnLineTrace();
@@ -141,7 +141,7 @@ void AWeaponBase::WeaponFireEmpty()
 
 	if (CurrentAmmo <= 0) {
 		const UObject* WorldContextObject = GetWorld();
-		UGameplayStatics::PlaySoundAtLocation(WorldContextObject, WeaponData.FireSoundEmpty, TraceStart);
+		UGameplayStatics::PlaySoundAtLocation(WorldContextObject, WeaponData->FireSoundEmpty, TraceStart);
 		return;
 	}
 }
@@ -171,36 +171,42 @@ void AWeaponBase::WeaponFireOnLineTrace()
 	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, QueryParams);
 	//DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Green : FColor::Red, false, 5.0f, 0, 10.0f);
 
-	if (IsValid(WeaponData.BulletTrailEffect))
+	if (IsValid(WeaponData->BulletTrailEffect))
 	{
 		FTransform SpawnTransform;
 		SpawnTransform.SetLocation(TraceStart);
 		SpawnTransform.SetRotation(FQuat::Identity);
 		SpawnTransform.SetScale3D(FVector::OneVector);
 		const UObject* WorldContextObject = GetWorld();
-		UGameplayStatics::PlaySoundAtLocation(WorldContextObject, WeaponData.FireSound, TraceStart);
-		UParticleSystemComponent* BulletTrailVFX = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData.BulletTrailEffect, SpawnTransform);
+		UGameplayStatics::PlaySoundAtLocation(WorldContextObject, WeaponData->FireSound, TraceStart);
+		UParticleSystemComponent* BulletTrailVFX = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData->BulletTrailEffect, SpawnTransform);
 		BulletTrailVFX->SetBeamSourcePoint(0, TraceStart, 0);
 		BulletTrailVFX->SetVectorParameter("ShockBeamEnd", Hit.bBlockingHit ? Hit.ImpactPoint : TraceEnd);
 
-		if (Hit.bBlockingHit) {
+		if (Hit.bBlockingHit) 
+		{
 			SpawnTransform.SetLocation(Hit.ImpactPoint);
 			SpawnTransform.SetRotation(UKismetMathLibrary::MakeRotFromX(Hit.ImpactNormal).Quaternion());
-
-			UParticleSystem* BulletImpact = (Hit.GetActor()->ActorHasTag(TEXT("Enemy"))) ?
+			const bool isHitEnemy = Hit.GetActor()->ActorHasTag(TEXT("Enemy"));
+			UParticleSystem* BulletImpact = (isHitEnemy) ?
 				ZSGameState->DataController->CommonData->BulletBodyImpact : ZSGameState->DataController->CommonData->BulletDefaultImpact;
 
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BulletImpact, SpawnTransform, true, EPSCPoolMethod::AutoRelease);
 
+			//Deal Damage
+			if (isHitEnemy) 
+			{
+				AController* PlayerController = Owner->GetInstigatorController();
+				UGameplayStatics::ApplyDamage(Hit.GetActor(), WeaponData->BaseDamage, PlayerController, this, nullptr);
+			}
 		}
 	}
-	if (IsValid(WeaponData.BulletMuzzle))
+	if (IsValid(WeaponData->BulletMuzzle))
 	{
 		MuzzleVFX->ActivateSystem();
 	}
 	// Active action on player
 	PlayerAction();
-	//Deal Damage
 }
 
 
@@ -214,7 +220,7 @@ void AWeaponBase::StartReloadWeapon()
 {
 	WeaponState = EWeaponState::Reloading;
 	GetWorldTimerManager().ClearTimer(FireTimerHandle);
-	GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &AWeaponBase::ReloadWeapon, 0.1f, false, WeaponData.ReloadSpeed);
+	GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &AWeaponBase::ReloadWeapon, 0.1f, false, WeaponData->ReloadSpeed);
 	PlayerAction();
 }
 
@@ -222,10 +228,10 @@ void AWeaponBase::StartReloadWeapon()
 void AWeaponBase::ReloadWeapon()
 {
 	GetWorldTimerManager().ClearTimer(ReloadTimerHandle);
-	if(WeaponData.bIsInfiniteAmmo)
-		CurrentAmmo = WeaponData.AmmoPerMag;
+	if(WeaponData->bIsInfiniteAmmo)
+		CurrentAmmo = WeaponData->AmmoPerMag;
 	else {
-		CurrentAmmo = fmin(TotalAmmo, WeaponData.AmmoPerMag);
+		CurrentAmmo = fmin(TotalAmmo, WeaponData->AmmoPerMag);
 		TotalAmmo = fmax(TotalAmmo - CurrentAmmo, 0);
 	}
 	WeaponState = EWeaponState::Holding;

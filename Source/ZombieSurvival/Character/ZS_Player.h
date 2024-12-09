@@ -27,6 +27,8 @@ public:
 	TArray<AWeaponBase*> Weapons;
 
 
+	// Cached Game Variables
+	AZombieSurvivalGameState* ZSGameState;
 
 protected:
 	// Called when the game starts or when spawned
@@ -37,11 +39,13 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void PickupWeapon(AWeaponBase* NewWeapon);
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	
 	virtual void OnPlayerMouseStart() override;
 
 	virtual void OnPlayerMouseEnd() override;
 
-	virtual void OnPlayerInteractWithWeapon(FWeaponDataStruct WeaponData, EWeaponState State)override;
+	virtual void OnPlayerInteractWithWeapon(UWeaponData* WeaponData, EWeaponState State)override;
 
 };

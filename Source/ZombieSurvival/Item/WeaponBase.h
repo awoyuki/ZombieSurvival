@@ -38,7 +38,7 @@ public:
 	UParticleSystemComponent* MuzzleVFX;
 
 	// Weapon Stored Data
-	FWeaponDataStruct WeaponData;
+	UWeaponData* WeaponData;
 
 	// Weapon Status
 	FTimerHandle FireTimerHandle;
@@ -67,7 +67,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void OnEquippedWeapon(AZS_Player* NewOwner, FWeaponDataStruct NewWeaponData) override;
+	virtual void OnEquippedWeapon(AZS_Player* NewOwner, UWeaponData* NewWeaponData) override;
 
 	void WeaponFire(); 
 
