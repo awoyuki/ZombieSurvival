@@ -6,7 +6,17 @@
 #include "ZombieSurvival/Interface/IWeapon.h"
 #include "ZombieSurvival/Data/WeaponData.h"
 #include "ZombieSurvival/PoolingSystem/Poolable.h"
+#include "ZombieSurvival/Framework/ZombieSurvivalGameState.h"
 #include "WeaponBase.generated.h"
+
+UENUM()
+enum class EWeaponState
+{
+	Firing, // Gun Firing; 
+	Reloading, // Gun Reloading; 
+	Storing, // Gun is currently eqquided in inventory
+	Holding // Gun is being held in player hand
+};
 
 UCLASS()
 class ZOMBIESURVIVAL_API AWeaponBase : public AActor, public IIWeapon, public IPoolable
@@ -17,7 +27,6 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
 
-	FTimerHandle FireTimerHandle;
 
 	// Weapon Components
 	UStaticMeshComponent* WeaponMeshComponent;
@@ -28,14 +37,27 @@ public:
 
 	UParticleSystemComponent* MuzzleVFX;
 
-	UParticleSystemComponent* BulletTrailVFX;
-
 	// Weapon Stored Data
 	FWeaponDataStruct WeaponData;
+
+	// Weapon Status
+	FTimerHandle FireTimerHandle;
+	FTimerHandle ReloadTimerHandle;
+	EWeaponState WeaponState;
+	int32 CurrentAmmo;
+	int32 TotalAmmo;
+	bool isFiringCached;
+
+	// Cached Game Variables
+	AZombieSurvivalGameState* ZSGameState;
 
 private:
 
 	void FiringWeapon();
+
+	void ReloadWeapon();
+
+	void PlayerAction();
 
 protected:
 	// Called when the game starts or when spawned
@@ -50,6 +72,14 @@ public:
 	void WeaponFire(); 
 
 	void WeaponEndFire();
+
+	void StartReloadWeapon();
+
+	void WeaponFireOnLineTrace();
+
+	void WeaponFireEmpty();
+
+	void WeaponFireOnSpawnProjectiles();
 
 	virtual void OnReturnToPool_Implementation() override;
 };

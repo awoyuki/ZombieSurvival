@@ -6,6 +6,7 @@
 #include "UObject/Interface.h"
 #include "ICharacter.generated.h"
 
+
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UICharacter : public UInterface
@@ -33,7 +34,7 @@ public:
 	virtual void OnPlayerMouseEnd();
 
 	UFUNCTION()
-	virtual void OnPlayerFiringWeapon(FWeaponDataStruct WeaponData);
+	virtual void OnPlayerInteractWithWeapon(FWeaponDataStruct WeaponData, EWeaponState State);
 
 	UFUNCTION()
 	virtual void OnPlayerChangeWeapon();

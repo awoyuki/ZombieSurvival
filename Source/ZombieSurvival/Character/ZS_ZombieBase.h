@@ -2,10 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "ZombieSurvival/PoolingSystem/PoolSubsystem.h"
 #include "ZS_ZombieBase.generated.h"
 
 UCLASS(Blueprintable)
-class ZOMBIESURVIVAL_API AZS_ZombieBase : public ACharacter
+class ZOMBIESURVIVAL_API AZS_ZombieBase : public ACharacter, public IPoolable
 {
 	GENERATED_BODY()
 

@@ -25,7 +25,7 @@ void AZS_Player::OnPlayerMouseStart()
 {
 	if (!IsValid(CurrentWeapon)) return;
 
-	if(CurrentWeapon->WeaponData.WeaponType == WeaponType::AssaultRifle)
+	if(CurrentWeapon->WeaponData.WeaponType == EWeaponType::AssaultRifle)
 		CurrentWeapon->WeaponFire();
 
 }
@@ -34,13 +34,27 @@ void AZS_Player::OnPlayerMouseEnd()
 {
 	if (!IsValid(CurrentWeapon)) return;
 
-	if (CurrentWeapon->WeaponData.WeaponType == WeaponType::AssaultRifle)
+	if (CurrentWeapon->WeaponData.WeaponType == EWeaponType::AssaultRifle)
 		CurrentWeapon->WeaponEndFire();
 }
 
-void AZS_Player::OnPlayerFiringWeapon(FWeaponDataStruct WeaponData)
+void AZS_Player::OnPlayerInteractWithWeapon(FWeaponDataStruct WeaponData, EWeaponState State)
 {
-	PlayAnimMontage(WeaponData.FireAnimation,1,NAME_None);
+	switch (State)
+	{
+	case EWeaponState::Firing:
+		PlayAnimMontage(WeaponData.FireAnimation, 1, NAME_None);
+		break;
+	case EWeaponState::Reloading:
+		PlayAnimMontage(WeaponData.ReloadAnimation, 1, NAME_None);
+		break;
+	case EWeaponState::Storing:
+		break;
+	case EWeaponState::Holding:
+		break;
+	default:
+		break;
+	}
 }
 
 

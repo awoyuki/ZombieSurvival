@@ -7,7 +7,7 @@
 #include "BaseItem.generated.h"
 
 UCLASS()
-class ZOMBIESURVIVAL_API ABaseItem : public AActor
+class ZOMBIESURVIVAL_API ABaseItem : public AActor, public IPoolable
 {
 	GENERATED_BODY()
 	

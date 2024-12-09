@@ -42,6 +42,6 @@ public:
 
 	virtual void OnPlayerMouseEnd() override;
 
-	virtual void OnPlayerFiringWeapon(FWeaponDataStruct WeaponData) override;
+	virtual void OnPlayerInteractWithWeapon(FWeaponDataStruct WeaponData, EWeaponState State)override;
 
 };

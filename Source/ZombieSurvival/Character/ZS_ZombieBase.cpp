@@ -5,6 +5,7 @@ AZS_ZombieBase::AZS_ZombieBase()
 {
 	// Set this empty to call Tick() every frame. You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	Tags.Add(TEXT("Enemy"));
 }
 
 // Called when the game starts or when spawned

@@ -11,7 +11,7 @@
  * 
  */
 UENUM(BlueprintType)
-enum class WeaponType : uint8
+enum class EWeaponType : uint8
 {
 	AssaultRifle UMETA(DisplayName = "Assault Rifle"),
 	BurstRifle UMETA(DisplayName = "Burst Rifle"),
@@ -31,7 +31,7 @@ struct FWeaponDataStruct
 	FName WeaponName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	WeaponType WeaponType;
+	EWeaponType WeaponType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	class UStaticMesh* WeaponMesh;
@@ -46,6 +46,9 @@ struct FWeaponDataStruct
 	int32 AmmoPerMag;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	bool bIsInfiniteAmmo;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	float FireRate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
@@ -58,6 +61,9 @@ struct FWeaponDataStruct
 	class USoundCue* FireSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	class USoundWave* FireSoundEmpty;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	class UAnimMontage* ReloadAnimation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
@@ -65,9 +71,6 @@ struct FWeaponDataStruct
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	class UParticleSystem* BulletTrailEffect;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	class UParticleSystem* BulletImpact;
 
 };
 

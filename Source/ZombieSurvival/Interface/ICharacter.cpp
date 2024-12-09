@@ -20,7 +20,7 @@ void IICharacter::OnPlayerMouseEnd()
 {
 }
 
-void IICharacter::OnPlayerFiringWeapon(FWeaponDataStruct WeaponData)
+void IICharacter::OnPlayerInteractWithWeapon(FWeaponDataStruct WeaponData, EWeaponState State)
 {
 }
 
