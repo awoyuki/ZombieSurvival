@@ -1,6 +1,6 @@
 
-#include "Engine/DamageEvents.h"
 #include "ZS_ZombieBase.h"
+#include "Engine/DamageEvents.h"
 
 // Sets default values
 AZS_ZombieBase::AZS_ZombieBase()

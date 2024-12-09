@@ -7,16 +7,23 @@ void AZombieSurvivalPlayerState::CalculateAmmo(EWeaponType WeaponType, int Value
 {
 	switch (WeaponType)
 	{
-	case EWeaponType::AssaultRifle:
-		TotalRifleAmmo = fmax(TotalRifleAmmo - Value, 0);
-		break;
-	case EWeaponType::GrenadeLauncher:
-		TotalGrenadeAmmo = fmax(TotalGrenadeAmmo - Value, 0);
-		break;
+		case EWeaponType::AssaultRifle:
+			TotalRifleAmmo = fmax(TotalRifleAmmo - Value, 0);
+			break;
+		case EWeaponType::GrenadeLauncher:
+			TotalGrenadeAmmo = fmax(TotalGrenadeAmmo - Value, 0);
+			break;
 	}
 }
 
 int AZombieSurvivalPlayerState::GetTotalAmmo(EWeaponType WeaponType)
 {
+	switch (WeaponType)
+	{
+		case EWeaponType::AssaultRifle:
+			return TotalRifleAmmo;
+		case EWeaponType::GrenadeLauncher:
+			return TotalGrenadeAmmo; 
+	}
 	return 0;
 }

@@ -75,6 +75,7 @@ void AZombieSurvivalCharacter::SetupPlayerInputComponent(class UInputComponent* 
 	{
 		// Setup mouse input events
 		EnhancedInputComponent->BindAction(InputMoveAction, ETriggerEvent::Triggered, this, &AZombieSurvivalCharacter::OnPlayerMove);
+		EnhancedInputComponent->BindAction(InputChangeWeaponAction, ETriggerEvent::Started, this, &AZombieSurvivalCharacter::OnPlayerChangeWeapon);
 		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Started, this, &AZombieSurvivalCharacter::OnPlayerMouseStart);
 		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Completed, this, &AZombieSurvivalCharacter::OnPlayerMouseEnd);
 		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Canceled, this, &AZombieSurvivalCharacter::OnPlayerMouseEnd);
@@ -180,7 +181,7 @@ FVector AZombieSurvivalCharacter::GetMouseLocation()
 	// If we hit a surface, cache the location
 	if (bHitSuccessful)
 	{
-		MousePosition = Hit.ImpactPoint;
+		MousePosition = Hit.Location;
 	}
 
 	return MousePosition;

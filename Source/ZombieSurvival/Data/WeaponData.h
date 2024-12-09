@@ -7,6 +7,8 @@
 #include "Animation/AnimMontage.h"
 #include "WeaponData.generated.h"
 
+class ABulletBase;
+
 /**
  * 
  */
@@ -41,7 +43,10 @@ public:
 	float BaseDamage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	class ABulletBase* BulletBase;
+	float MovementSpeed = 600;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	TSubclassOf<class ABulletBase> BulletBase;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	int32 AmmoPerMag;

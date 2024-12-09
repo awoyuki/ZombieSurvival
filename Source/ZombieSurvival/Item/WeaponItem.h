@@ -34,7 +34,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void OnItemSpawn() override;
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 	virtual void OnPlayerOverlap(AActor* PlayerActor) override;
 };

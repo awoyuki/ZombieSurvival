@@ -1,5 +1,7 @@
 #include "ZS_Player.h"
+#include "ZombieSurvival/Item/WeaponBase.h"
 #include "ZombieSurvival/PoolingSystem/PoolSubsystem.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 // Sets default values
@@ -43,9 +45,10 @@ void AZS_Player::OnPlayerMouseStart()
 {
 	if (!IsValid(CurrentWeapon)) return;
 
-	if(CurrentWeapon->WeaponData->WeaponType == EWeaponType::AssaultRifle)
+	if (CurrentWeapon->WeaponData->WeaponType == EWeaponType::AssaultRifle)
 		CurrentWeapon->WeaponFire();
-
+	else
+		CurrentWeapon->WeaponCharge();
 }
 
 void AZS_Player::OnPlayerMouseEnd()
@@ -54,12 +57,20 @@ void AZS_Player::OnPlayerMouseEnd()
 
 	if (CurrentWeapon->WeaponData->WeaponType == EWeaponType::AssaultRifle)
 		CurrentWeapon->WeaponEndFire();
+	else 
+	{
+		CurrentWeapon->WeaponFireCharge();
+		HideCursorVFX();
+	}
 }
 
 void AZS_Player::OnPlayerChangeWeapon()
 {
+	if (Weapons.Num() <= 1)
+		return;
 	int NewWeaponIndex = Weapons.FindLast(CurrentWeapon);
 	NewWeaponIndex = (NewWeaponIndex + 1) % Weapons.Num();
+	CurrentWeapon->OnStoredWeapon();
 	CurrentWeapon = Weapons[NewWeaponIndex];
 	CurrentWeapon->OnSwitchWeapon();
 }
@@ -83,14 +94,42 @@ void AZS_Player::OnPlayerInteractWithWeapon(UWeaponData* WeaponData, EWeaponStat
 	}
 }
 
+void AZS_Player::UpdateMovementSpeed(float NewSpeed)
+{
+	GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
+}
+
+void AZS_Player::ShowCursorVFX()
+{
+	FXCursorComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, FVector::ZeroVector, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::AutoRelease, true);
+	GetWorldTimerManager().SetTimer(CursorFXHandle, this, &AZS_Player::UpdateCursorVFXLocation, 0.02f, true, 0);
+}
+
+void AZS_Player::UpdateCursorVFXLocation()
+{
+	FXCursorComponent->SetWorldLocation(GetMouseLocation());
+}
+
+
+void AZS_Player::HideCursorVFX()
+{
+	GetWorldTimerManager().ClearTimer(CursorFXHandle);
+	if (FXCursorComponent != nullptr)
+	{
+		FXCursorComponent->DeactivateImmediate();
+	}
+}
+
 
 
 void AZS_Player::PickupWeapon(AWeaponBase* NewWeapon)
 {
 	NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
-	Weapons.Add(NewWeapon);
-	CurrentWeapon = NewWeapon;
 	NewWeapon->SetOwner(this);
+	Weapons.Add(NewWeapon);
+	if (IsValid(CurrentWeapon))
+		CurrentWeapon->OnStoredWeapon();
+	CurrentWeapon = NewWeapon;
 }
 
 float AZS_Player::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

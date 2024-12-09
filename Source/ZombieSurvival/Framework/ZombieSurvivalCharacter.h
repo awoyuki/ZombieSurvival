@@ -52,6 +52,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Property)
 	double AngularDistanceBetweenPlayerAndCursor();
 
+	FVector GetMouseLocation();
+
 protected:
 
 	APlayerController* PlayerController;
@@ -70,6 +72,5 @@ protected:
 
 	virtual void FixPlayerRotation();
 
-	FVector GetMouseLocation();
 };
 

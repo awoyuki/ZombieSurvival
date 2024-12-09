@@ -3,12 +3,13 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/StaticMeshComponent.h"
-#include "ZombieSurvival/Interface/IWeapon.h"
 #include "ZombieSurvival/Data/WeaponData.h"
 #include "ZombieSurvival/PoolingSystem/Poolable.h"
 #include "ZombieSurvival/Framework/ZombieSurvivalGameState.h"
 #include "ZombieSurvival/Framework/ZombieSurvivalPlayerState.h"
 #include "WeaponBase.generated.h"
+
+class AZS_Player;
 
 UENUM()
 enum class EWeaponState
@@ -74,7 +75,15 @@ public:
 
 	virtual void OnSwitchWeapon();
 
+	virtual void OnStoredWeapon();
+
+	void ActiveWeapon(bool bActive);
+
 	void WeaponFire(); 
+
+	void WeaponCharge();
+
+	void WeaponFireCharge();
 
 	void WeaponEndFire();
 
@@ -85,6 +94,4 @@ public:
 	void WeaponFireEmpty();
 
 	void WeaponFireOnSpawnProjectiles();
-
-	virtual void OnReturnToPool_Implementation() override;
 };

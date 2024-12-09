@@ -12,7 +12,7 @@ AWeaponItem::AWeaponItem()
 void AWeaponItem::BeginPlay()
 {
 	Super::BeginPlay();
-	OnItemSpawn();
+	GetWorldTimerManager().SetTimer(RotateTimeHandle, this, &AWeaponItem::RotateMesh, 0.01f, true, 0);
 }
 
 void AWeaponItem::RotateMesh()
@@ -26,14 +26,14 @@ void AWeaponItem::Tick(float DeltaTime)
 {	
 }
 
-void AWeaponItem::OnItemSpawn()
+void AWeaponItem::OnConstruction(const FTransform& Transform)
 {
+	Super::OnConstruction(Transform);
 	if (IsValid(WeaponData->WeaponMesh))
 	{
 		MeshComponent->SetStaticMesh(WeaponData->WeaponMesh);
 		TriggerSphere->SetWorldLocation(MeshComponent->Bounds.GetSphere().Center);
 	}
-	GetWorldTimerManager().SetTimer(RotateTimeHandle, this, &AWeaponItem::RotateMesh, 0.01f, true, 0);
 }
 
 void AWeaponItem::OnPlayerOverlap(AActor* PlayerActor)

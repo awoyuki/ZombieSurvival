@@ -6,7 +6,6 @@
 #include "GameFramework/PlayerController.h"
 #include "EnhancedInputComponent.h"
 #include "ZombieSurvivalCharacter.h"
-#include "ZombieSurvival/Interface/ICharacter.h"
 #include "ZombieSurvivalPlayerController.generated.h"
 
 /** Forward declaration to improve compiling times */

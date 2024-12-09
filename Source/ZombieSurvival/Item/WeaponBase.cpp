@@ -1,5 +1,7 @@
 #include "WeaponBase.h"
 #include "ZombieSurvival/Character/ZS_Player.h"
+#include "ZombieSurvival/Item/BulletBase.h"
+#include "ZombieSurvival/PoolingSystem/PoolSubsystem.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 #include "Kismet/GameplayStatics.h"
@@ -69,13 +71,33 @@ void AWeaponBase::OnEquippedWeapon(AZS_Player* NewOwner, UWeaponData* NewWeaponD
 
 	// Default Ammo 
 	CurrentAmmo = WeaponData->AmmoPerMag;
+
+	// Set Character MovementSpeed
+	ZSPlayer->UpdateMovementSpeed(WeaponData->MovementSpeed);
 }
 
 void AWeaponBase::OnSwitchWeapon()
 {
 	WeaponState = EWeaponState::Holding;
+	ActiveWeapon(true);
 	const UObject* WorldContextObject = GetWorld();
 	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, ZSGameState->DataController->CommonData->SwitchWeapon, GetActorLocation());
+	// Set Character MovementSpeed
+	ZSPlayer->UpdateMovementSpeed(WeaponData->MovementSpeed);
+}
+
+void AWeaponBase::OnStoredWeapon()
+{
+	WeaponEndFire();
+	ActiveWeapon(false);
+	WeaponState = EWeaponState::Storing;	
+}
+
+void AWeaponBase::ActiveWeapon(bool bActive)
+{
+	SetActorEnableCollision(bActive);
+	SetActorHiddenInGame(!bActive);
+	PrimaryActorTick.bCanEverTick = bActive;
 }
 
 void AWeaponBase::WeaponFire()
@@ -86,8 +108,25 @@ void AWeaponBase::WeaponFire()
 		WeaponState = EWeaponState::Firing;
 		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AWeaponBase::FiringWeapon, WeaponData->FireRate, true, 0);
 	}
-
 }
+
+void AWeaponBase::WeaponCharge()
+{
+	ZSPlayer->ShowCursorVFX();
+}
+
+void AWeaponBase::WeaponFireCharge()
+{
+	isFiringCached = true;
+	if (WeaponState == EWeaponState::Holding)
+	{
+		WeaponState = EWeaponState::Firing;
+		FiringWeapon();
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AWeaponBase::WeaponEndFire, 0.01f, false, WeaponData->FireRate);
+	}
+}
+
+
 void AWeaponBase::WeaponEndFire()
 {
 	isFiringCached = false;
@@ -95,15 +134,11 @@ void AWeaponBase::WeaponEndFire()
 	{
 		WeaponState = EWeaponState::Holding;
 	}
-	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+	if (WeaponData->WeaponType != EWeaponType::GrenadeLauncher)
+		GetWorldTimerManager().ClearTimer(FireTimerHandle);
 
 }
 
-void AWeaponBase::OnReturnToPool_Implementation()
-{
-	WeaponEndFire();
-	WeaponState = EWeaponState::Storing;
-}
 
 void AWeaponBase::FiringWeapon()
 {
@@ -132,6 +167,8 @@ void AWeaponBase::FiringWeapon()
 	}
 }
 
+
+
 void AWeaponBase::WeaponFireEmpty()
 {
 	FVector TraceStart = WeaponMeshComponent->GetSocketLocation(MuzzleSocket);
@@ -150,17 +187,17 @@ void AWeaponBase::WeaponFireOnLineTrace()
 
 	FVector TraceStart = WeaponMeshComponent->GetSocketLocation(MuzzleSocket);
 
-	FHitResult MouseHit;
-	bool bHitSuccessful = false;
-	bHitSuccessful = UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHitResultUnderCursor(ECC_Visibility, true, MouseHit);
-	FVector TraceEnd = TraceStart + (GetActorForwardVector() * 1000);
+	FVector TraceEnd = ZSPlayer->GetMouseLocation(); 
 	// If we hit a surface, cache the location
-	if (bHitSuccessful)
+	if (TraceEnd == FVector::ZeroVector)
 	{
-		TraceEnd = MouseHit.ImpactPoint;
 		TraceEnd.Z = TraceStart.Z - 10.0f;
 		FVector NewDirection = TraceEnd - TraceStart;
 		TraceEnd = ((NewDirection.Dot(GetActorForwardVector()) > 1) ? 1 : -1) * (TraceEnd - TraceStart) * 1000;
+	}
+	else
+	{
+		TraceEnd = TraceStart + (GetActorForwardVector() * 1000);
 	}
 
 	FCollisionQueryParams QueryParams;
@@ -209,7 +246,17 @@ void AWeaponBase::WeaponFireOnLineTrace()
 
 void AWeaponBase::WeaponFireOnSpawnProjectiles()
 {
+	if (WeaponData->BulletBase == nullptr)
+		return;
 
+	UClass* SpawnClass = WeaponData->BulletBase;
+	FVector Location = WeaponMeshComponent->GetSocketLocation(MuzzleSocket);
+	FRotator Rotation = WeaponMeshComponent->GetSocketRotation(MuzzleSocket);
+	ABulletBase* Bullet = GetWorld()->GetSubsystem<UPoolSubsystem>()->SpawnFromPool<ABulletBase>(SpawnClass, Location, Rotation);
+	Bullet->StartMoving(ZSPlayer->GetMouseLocation());
+
+	const UObject* WorldContextObject = GetWorld();
+	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, WeaponData->FireSound, Location);
 }
 
 
@@ -234,7 +281,10 @@ void AWeaponBase::ReloadWeapon()
 	}
 	WeaponState = EWeaponState::Holding;
 	if (isFiringCached) {
-		WeaponFire();
+		if (WeaponData->WeaponType == EWeaponType::GrenadeLauncher)
+			WeaponFireOnSpawnProjectiles();
+		else
+			WeaponFire();
 	}
 }
 
