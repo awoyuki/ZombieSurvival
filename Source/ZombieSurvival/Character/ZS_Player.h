@@ -2,8 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "ZombieSurvival/Framework/ZombieSurvivalCharacter.h"
-#include "ZombieSurvival/Framework/ZombieSurvivalGameState.h"
-#include "ZombieSurvival/Framework/ZombieSurvivalPlayerState.h"
 #include "NiagaraSystem.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
@@ -39,11 +37,6 @@ public:
 	// List of weapon
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<AWeaponBase*> Weapons;
-
-
-	// Cached Game Variables
-	AZombieSurvivalGameState* ZSGameState;
-	AZombieSurvivalPlayerState* ZSPlayerState;
 
 	FTimerHandle CursorFXHandle;
 

@@ -22,7 +22,8 @@ AWeaponBase::AWeaponBase()
 	MuzzleVFX = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("MuzzleVFX"));
 	MuzzleVFX->SetupAttachment(WeaponMeshComponent);
 	MuzzleVFX->SetAutoActivate(false);
-	}
+
+}
 
 // Called when the game starts or when spawned
 void AWeaponBase::BeginPlay()
@@ -84,11 +85,17 @@ void AWeaponBase::OnSwitchWeapon()
 	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, ZSGameState->DataController->CommonData->SwitchWeapon, GetActorLocation());
 	// Set Character MovementSpeed
 	ZSPlayer->UpdateMovementSpeed(WeaponData->MovementSpeed);
+	WeaponCheckEmpty();
 }
 
 void AWeaponBase::OnStoredWeapon()
 {
 	WeaponEndFire();
+	if (WeaponState == EWeaponState::Reloading)
+	{
+		GetWorldTimerManager().ClearTimer(ReloadTimerHandle);
+		ZSPlayer->GetMesh()->GetAnimInstance()->Montage_Stop(0.1f, WeaponData->ReloadAnimation);
+	}
 	ActiveWeapon(false);
 	WeaponState = EWeaponState::Storing;	
 }
@@ -99,6 +106,8 @@ void AWeaponBase::ActiveWeapon(bool bActive)
 	SetActorHiddenInGame(!bActive);
 	PrimaryActorTick.bCanEverTick = bActive;
 }
+
+
 
 void AWeaponBase::WeaponFire()
 {
@@ -117,7 +126,6 @@ void AWeaponBase::WeaponCharge()
 
 void AWeaponBase::WeaponFireCharge()
 {
-	isFiringCached = true;
 	if (WeaponState == EWeaponState::Holding)
 	{
 		WeaponState = EWeaponState::Firing;
@@ -136,23 +144,23 @@ void AWeaponBase::WeaponEndFire()
 	}
 	if (WeaponData->WeaponType != EWeaponType::GrenadeLauncher)
 		GetWorldTimerManager().ClearTimer(FireTimerHandle);
-
+	else 
+		WeaponCheckEmpty();
 }
 
+
+void AWeaponBase::WeaponCheckEmpty()
+{
+	if (CurrentAmmo <= 0 && (ZSPlayerState->GetTotalAmmo(WeaponData->WeaponType) > 0 || WeaponData->bIsInfiniteAmmo)) 
+		StartReloadWeapon();
+}
 
 void AWeaponBase::FiringWeapon()
 {
 	if (IsValid(WeaponMeshComponent) && WeaponMeshComponent->DoesSocketExist(MuzzleSocket)) {
 
 		//Minus Ammo
-		if (CurrentAmmo <= 0)
-		{
-			if (ZSPlayerState->GetTotalAmmo(WeaponData->WeaponType) > 0 || WeaponData->bIsInfiniteAmmo)
-				StartReloadWeapon();
-			else
-				WeaponFireEmpty();
-		}
-		else 
+		if (CurrentAmmo > 0)
 		{
 			CurrentAmmo--;
 			if (WeaponData->WeaponType == EWeaponType::GrenadeLauncher)
@@ -160,11 +168,11 @@ void AWeaponBase::FiringWeapon()
 			else
 				WeaponFireOnLineTrace();
 		}
+		else 
+			WeaponFireEmpty();
 	}
 	else 
-	{
 		WeaponEndFire();
-	}
 }
 
 
@@ -191,13 +199,12 @@ void AWeaponBase::WeaponFireOnLineTrace()
 	// If we hit a surface, cache the location
 	if (TraceEnd == FVector::ZeroVector)
 	{
-		TraceEnd.Z = TraceStart.Z - 10.0f;
-		FVector NewDirection = TraceEnd - TraceStart;
-		TraceEnd = ((NewDirection.Dot(GetActorForwardVector()) > 1) ? 1 : -1) * (TraceEnd - TraceStart) * 1000;
+		TraceEnd = TraceStart + (GetActorForwardVector() * 1000);
 	}
 	else
 	{
-		TraceEnd = TraceStart + (GetActorForwardVector() * 1000);
+		FVector NewDirection = TraceEnd - TraceStart;
+		TraceEnd = ((NewDirection.Dot(GetActorForwardVector()) > 1) ? 1 : -1) * (TraceEnd - TraceStart) * 1000;
 	}
 
 	FCollisionQueryParams QueryParams;
@@ -241,6 +248,8 @@ void AWeaponBase::WeaponFireOnLineTrace()
 	}
 	// Active action on player
 	PlayerAction();
+	// Check Reload
+	WeaponCheckEmpty();
 }
 
 
@@ -253,10 +262,17 @@ void AWeaponBase::WeaponFireOnSpawnProjectiles()
 	FVector Location = WeaponMeshComponent->GetSocketLocation(MuzzleSocket);
 	FRotator Rotation = WeaponMeshComponent->GetSocketRotation(MuzzleSocket);
 	ABulletBase* Bullet = GetWorld()->GetSubsystem<UPoolSubsystem>()->SpawnFromPool<ABulletBase>(SpawnClass, Location, Rotation);
-	Bullet->StartMoving(ZSPlayer->GetMouseLocation());
+	Bullet->SetOwner(Owner);
+	Bullet->StartMoving(ZSPlayer->GetMouseLocation(), WeaponData->BaseDamage);
 
 	const UObject* WorldContextObject = GetWorld();
 	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, WeaponData->FireSound, Location);
+
+	if (IsValid(WeaponData->BulletMuzzle))
+	{
+		MuzzleVFX->ActivateSystem();
+	}
+
 }
 
 
@@ -274,17 +290,15 @@ void AWeaponBase::ReloadWeapon()
 	GetWorldTimerManager().ClearTimer(ReloadTimerHandle);
 	if(WeaponData->bIsInfiniteAmmo)
 		CurrentAmmo = WeaponData->AmmoPerMag;
-	else {
-
+	else 
+	{
 		CurrentAmmo = fmin(ZSPlayerState->GetTotalAmmo(WeaponData->WeaponType), WeaponData->AmmoPerMag);
 		ZSPlayerState->CalculateAmmo(WeaponData->WeaponType, WeaponData->AmmoPerMag);
 	}
 	WeaponState = EWeaponState::Holding;
-	if (isFiringCached) {
-		if (WeaponData->WeaponType == EWeaponType::GrenadeLauncher)
-			WeaponFireOnSpawnProjectiles();
-		else
-			WeaponFire();
+	if (isFiringCached && WeaponData->WeaponType != EWeaponType::GrenadeLauncher)
+	{
+		WeaponFire();
 	}
 }
 

@@ -11,8 +11,8 @@
 #include "ZombieSurvivalPlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Materials/Material.h"
-#include "Engine/World.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Perception/AISenseConfig_Sight.h"
 
 AZombieSurvivalCharacter::AZombieSurvivalCharacter()
 {
@@ -47,11 +47,16 @@ AZombieSurvivalCharacter::AZombieSurvivalCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
+	// Setup For AI
+	SetupStimulusSource();
+
 }
 
 void AZombieSurvivalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	ZSGameState = Cast<AZombieSurvivalGameState>(GetWorld()->GetGameState());
+	ZSPlayerState = Cast<AZombieSurvivalPlayerState>(GetPlayerState());
 	PlayerController = Cast<APlayerController>(Controller);
 	//Add Input Mapping Context
 	if (IsValid(PlayerController))
@@ -110,6 +115,11 @@ float AZombieSurvivalCharacter::PlayAnimMontage(class UAnimMontage* AnimMontage,
 	return 0.f;
 }
 
+bool AZombieSurvivalCharacter::IsDead()
+{
+	return ZSPlayerState->GetHealth() <= 0;
+}
+
 
 
 void AZombieSurvivalCharacter::OnPlayerMove(const FInputActionValue& value)
@@ -146,6 +156,16 @@ void AZombieSurvivalCharacter::FixPlayerRotation()
 	{
 		const FQuat newQuat = (FRotator(0, rotateAngle - (rotateAngle < -90 ? (-90) : 90), 0)).Quaternion();
 		AddActorLocalRotation(newQuat);
+	}
+}
+
+void AZombieSurvivalCharacter::SetupStimulusSource()
+{
+	StimulusSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("Stimulus"));
+	if (StimulusSource)
+	{
+		StimulusSource->RegisterForSense(TSubclassOf<UAISense_Sight>());
+		StimulusSource->RegisterWithPerceptionSystem();
 	}
 }
 

@@ -12,9 +12,9 @@
 UENUM(BlueprintType)
 enum class EEnemyType : uint8
 {
-	AssaultRifle UMETA(DisplayName = "Assault Rifle"),
-	BurstRifle UMETA(DisplayName = "Burst Rifle"),
-	GrenadeLauncher UMETA(DisplayName = "Grenade Launcher")
+	Melee UMETA(DisplayName = "Melee"),
+	Range UMETA(DisplayName = "Range"),
+	Boss UMETA(DisplayName = "Boss")
 };
 
 UCLASS()
@@ -31,14 +31,26 @@ public:
 	FName EnemyName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	USkeletalMesh* Mesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	EEnemyType EnemyType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	float EnemyHealth = 100;
+	float Health = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	float AttackRange = 150;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	float AttackSpeed = 3;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	float BaseDamage = 25;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	float MovementSpeed = 500;
+	float MovementSpeed = 300;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	class UAnimMontage* AttackAnimation;
 };

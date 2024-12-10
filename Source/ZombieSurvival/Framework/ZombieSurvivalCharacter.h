@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "InputActionValue.h"
 #include "GameFramework/Character.h"
+#include "ZombieSurvival/Framework/ZombieSurvivalGameState.h"
+#include "ZombieSurvival/Framework/ZombieSurvivalPlayerState.h"
 #include "ZombieSurvivalCharacter.generated.h"
 
 UCLASS(Blueprintable)
@@ -54,6 +56,13 @@ public:
 
 	FVector GetMouseLocation();
 
+	bool IsDead();
+
+	// Cached Game Variables
+	AZombieSurvivalGameState* ZSGameState;
+	AZombieSurvivalPlayerState* ZSPlayerState;
+
+
 protected:
 
 	APlayerController* PlayerController;
@@ -71,6 +80,10 @@ protected:
 	virtual void OnPlayerChangeWeapon();
 
 	virtual void FixPlayerRotation();
+
+	class UAIPerceptionStimuliSourceComponent* StimulusSource;
+
+	void SetupStimulusSource();
 
 };
 

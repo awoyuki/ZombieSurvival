@@ -5,45 +5,54 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/SphereComponent.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 #include "ZombieSurvival/PoolingSystem/Poolable.h"
 #include "BulletBase.generated.h"
 
-UCLASS()
+UCLASS(Blueprintable)
 class ZOMBIESURVIVAL_API ABulletBase : public AActor, public IPoolable
 {
 	GENERATED_BODY()
 	
-private:
-	FVector TargetLocation;
-	float StartHeight;
-	float TargetDistance;
+protected:
+	float BulletDamage;
 
 public:	
 	// Sets default values for this actor's properties
 	ABulletBase();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bullet Data")
 	UStaticMeshComponent* BulletMesh;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bullet Data")
+	USphereComponent* TriggerSphere;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float BulletSpeed = 10;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bullet Data")
+	UProjectileMovementComponent* ProjectileComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet Data")
+	float BulletSpeed = 800.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet Data")
 	class UParticleSystem* ImpactFX;
 
-	FTimerHandle MoveTimeHandle;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet Data")
+	class USoundCue* ImpactSFX;
+
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	UFUNCTION()
+	void OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
+
 public:	
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void StartMoving(FVector Target);
+	virtual void StartMoving(FVector Target, float Damage);
 
-	void Moving();
-
-	void EndMove();
+	virtual void EndMove(const FHitResult& Hit);
 };

@@ -21,9 +21,6 @@ void AZS_Player::BeginPlay()
 	UPoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UPoolSubsystem>();
 
 	//GetDefaultWeapon
-	ZSGameState = Cast<AZombieSurvivalGameState>(GetWorld()->GetGameState());
-	ZSPlayerState = Cast<AZombieSurvivalPlayerState>(GetPlayerState());
-
 	UWeaponData* DefWeaponData = ZSGameState->DataController->DefaultWeaponData;
 	if (DefWeaponData == nullptr)
 		return;
@@ -73,6 +70,7 @@ void AZS_Player::OnPlayerChangeWeapon()
 	CurrentWeapon->OnStoredWeapon();
 	CurrentWeapon = Weapons[NewWeaponIndex];
 	CurrentWeapon->OnSwitchWeapon();
+	HideCursorVFX();
 }
 
 void AZS_Player::OnPlayerInteractWithWeapon(UWeaponData* WeaponData, EWeaponState State)
@@ -101,13 +99,14 @@ void AZS_Player::UpdateMovementSpeed(float NewSpeed)
 
 void AZS_Player::ShowCursorVFX()
 {
-	FXCursorComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, FVector::ZeroVector, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::AutoRelease, true);
+	FXCursorComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, FVector::ZeroVector, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), false, true, ENCPoolMethod::None, true);
 	GetWorldTimerManager().SetTimer(CursorFXHandle, this, &AZS_Player::UpdateCursorVFXLocation, 0.02f, true, 0);
 }
 
 void AZS_Player::UpdateCursorVFXLocation()
 {
-	FXCursorComponent->SetWorldLocation(GetMouseLocation());
+	if(FXCursorComponent != nullptr)
+		FXCursorComponent->SetWorldLocation(GetMouseLocation());
 }
 
 
@@ -130,10 +129,16 @@ void AZS_Player::PickupWeapon(AWeaponBase* NewWeapon)
 	if (IsValid(CurrentWeapon))
 		CurrentWeapon->OnStoredWeapon();
 	CurrentWeapon = NewWeapon;
+	HideCursorVFX();
 }
 
 float AZS_Player::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	return 0.0f;
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, TEXT("Player Get Zombie Hit!"));
+	float Health = ZSPlayerState->GetHealth();
+	if(Health > 0)
+		ZSPlayerState->SetHealth(FMath::Clamp(Health - DamageAmount, 0, ZSPlayerState->GetMaxHealth()));
+
+	return DamageAmount;
 }
 

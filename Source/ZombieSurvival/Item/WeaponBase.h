@@ -44,6 +44,7 @@ public:
 	FTimerHandle FireTimerHandle;
 	FTimerHandle ReloadTimerHandle;
 	EWeaponState WeaponState;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool isFiringCached;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -78,6 +79,8 @@ public:
 	virtual void OnStoredWeapon();
 
 	void ActiveWeapon(bool bActive);
+
+	void WeaponCheckEmpty(); 
 
 	void WeaponFire(); 
 

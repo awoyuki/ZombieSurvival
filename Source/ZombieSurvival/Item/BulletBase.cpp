@@ -2,16 +2,31 @@
 
 
 #include "BulletBase.h"
-#include <Kismet/KismetMathLibrary.h>
-#include <Kismet/GameplayStatics.h>
+#include "ZombieSurvival/PoolingSystem/PoolSubsystem.h"
 
 // Sets default values
 ABulletBase::ABulletBase()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	TriggerSphere = CreateDefaultSubobject<USphereComponent>(TEXT("TriggerSphere"));
+	SetRootComponent(TriggerSphere);
+	TriggerSphere->SetGenerateOverlapEvents(false);
+	TriggerSphere->SetNotifyRigidBodyCollision(true);
+	TriggerSphere->SetCollisionProfileName("Projectile");
+	TriggerSphere->OnComponentHit.AddDynamic(this, &ABulletBase::OnBulletHit);
+
 	BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BulletMesh"));
-	SetRootComponent(BulletMesh);
+	BulletMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BulletMesh->SetupAttachment(TriggerSphere);
+
+
+	ProjectileComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
+	ProjectileComponent->SetAutoActivate(false);
+	ProjectileComponent->SetActive(false);
+	ProjectileComponent->InitialSpeed = 0;
+	ProjectileComponent->MaxSpeed = 0;
 }
 
 // Called when the game starts or when spawned
@@ -28,39 +43,23 @@ void ABulletBase::Tick(float DeltaTime)
 
 }
 
-void ABulletBase::StartMoving(FVector Target)
+void ABulletBase::StartMoving(FVector Target, float Damage)
 {
-	TargetLocation = Target;
-	TargetDistance = FVector::DistSquaredXY(GetActorLocation(), Target);
-	StartHeight = GetActorLocation().Z;
-	GetWorldTimerManager().SetTimer(MoveTimeHandle, this, &ABulletBase::Moving, GetWorld()->GetDeltaSeconds(), true, 0);
+	BulletDamage = Damage;
+	ProjectileComponent->SetActive(true);
+	ProjectileComponent->InitialSpeed = BulletSpeed;
+	ProjectileComponent->MaxSpeed = BulletSpeed*10;
 }
 
-void ABulletBase::Moving()
+void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
 {
-	FVector CurrentLocation = GetActorLocation();
-	FRotator CurrentRotation = GetActorRotation();
-	FRotator TargetRot = UKismetMathLibrary::MakeRotFromX(TargetLocation - CurrentLocation);
-
-	CurrentLocation = FMath::Lerp(CurrentLocation, TargetLocation, BulletSpeed * GetWorld()->GetDeltaSeconds());
-	CurrentRotation = FMath::Lerp(CurrentRotation, TargetRot, BulletSpeed * GetWorld()->GetDeltaSeconds());
-
-	float CurrentDistance = FVector::DistSquaredXY(GetActorLocation(), TargetLocation);
-	CurrentLocation.Z = FMath::Lerp(TargetLocation.Z, StartHeight + 20.0f, FMath::Sin(PI * CurrentDistance / TargetDistance));
-
-	SetActorLocation(CurrentLocation);
-	SetActorRotation(CurrentRotation);
-
-	if (CurrentDistance < 0.1f) 
-	{
-		GetWorldTimerManager().ClearTimer(MoveTimeHandle);
-		EndMove();
-	}
+	EndMove(Hit);
 }
 
-void ABulletBase::EndMove()
+
+void ABulletBase::EndMove(const FHitResult& Hit)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, TEXT("Sphere Damage Applied!"));
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactFX, GetActorTransform(), true, EPSCPoolMethod::AutoRelease);
+	ProjectileComponent->SetActive(false);
+	GetWorld()->GetSubsystem<UPoolSubsystem>()->ReturnToPool(this);
 }
 

@@ -15,6 +15,9 @@ enum class EPlayerStatus : uint8
 	Stunned UMETA(DisplayName = "Stunned")
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHealthDelegate, float, NewHealth);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FAmmoDelegate, float, NewRilfeAmmo, float, NewGrenadeAmmo);
+
 /**
  * 
  */
@@ -22,21 +25,58 @@ UCLASS()
 class ZOMBIESURVIVAL_API AZombieSurvivalPlayerState : public APlayerState
 {
 	GENERATED_BODY()
+
 	
-public:
+protected:
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int Health;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Stored Data")
+	int Health = 100;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Stored Data")
+	int MaxHealth = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Stored Data")
 	EPlayerStatus PlayerStatus;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Stored Data")
 	int TotalRifleAmmo = 90;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Stored Data")
 	int TotalGrenadeAmmo = 12;
 
+public:
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Player Stored Data")
+	FHealthDelegate OnHealthChanged;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Player Stored Data")
+	FAmmoDelegate OnAmmoChanged;
+
+	UFUNCTION(BlueprintCallable, Category="Player Stored Data", BlueprintPure)
+	float GetHealth();
+
+	UFUNCTION(BlueprintCallable, Category = "Player Stored Data", BlueprintPure)
+	float GetMaxHealth();
+
+	UFUNCTION(BlueprintCallable, Category = "Player Stored Data")
+	void SetHealth(float NewHeath);
+
+	UFUNCTION(BlueprintCallable, Category = "Player Stored Data")
+	void SetMaxHealth(float NewMaxHeath);
+
+	UFUNCTION(BlueprintCallable, Category = "Player Stored Data", BlueprintPure)
+	EPlayerStatus GetPlayerStatus();
+
+	UFUNCTION(BlueprintCallable, Category = "Player Stored Data")
+	void SetPlayerStatus(EPlayerStatus NewStatus);
+
+	UFUNCTION(BlueprintCallable, Category = "Player Stored Data")
 	void CalculateAmmo(EWeaponType WeaponType, int Value);
+
+	UFUNCTION(BlueprintCallable, Category = "Player Stored Data", BlueprintPure)
 	int GetTotalAmmo(EWeaponType WeaponType);
+
+	UFUNCTION(BlueprintCallable, Category = "Player Stored Data")
+	void SetTotalAmmo(EWeaponType WeaponType, int Value);
+
 };

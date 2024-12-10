@@ -46,7 +46,7 @@ public:
 	float MovementSpeed = 600;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	TSubclassOf<class ABulletBase> BulletBase;
+	TSubclassOf<ABulletBase> BulletBase;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	int32 AmmoPerMag;
