@@ -8,6 +8,11 @@
 AZS_Player::AZS_Player()
 {
 	// Set this character to call Tick() every frame. You can turn this off to improve performance if you don't need it.
+
+	StunVFX = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("MuzzleVFX"));
+	StunVFX->SetupAttachment(RootComponent);
+	StunVFX->SetAutoActivate(false);
+
 	PrimaryActorTick.bCanEverTick = true;
 	this->Tags.Add(TEXT("Player"));
 
@@ -21,14 +26,13 @@ void AZS_Player::BeginPlay()
 	UPoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UPoolSubsystem>();
 
 	//GetDefaultWeapon
-	UWeaponData* DefWeaponData = ZSGameState->DataController->DefaultWeaponData;
-	if (DefWeaponData == nullptr)
+	if (DefaultWeaponData == nullptr)
 		return;
 
 	AWeaponBase* NewWeapon = PoolSubsystem->SpawnFromPool<AWeaponBase>(AWeaponBase::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
 	if (IsValid(NewWeapon)) {
 		PickupWeapon(NewWeapon);
-		NewWeapon->OnEquippedWeapon(this, DefWeaponData);
+		NewWeapon->OnEquippedWeapon(this, DefaultWeaponData);
 	}
 }
 
@@ -40,7 +44,7 @@ void AZS_Player::Tick(float DeltaTime)
 
 void AZS_Player::OnPlayerMouseStart()
 {
-	if (!IsValid(CurrentWeapon)) return;
+	if (!IsValid(CurrentWeapon) || ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Stunned)  return;
 
 	if (CurrentWeapon->WeaponData->WeaponType == EWeaponType::AssaultRifle)
 		CurrentWeapon->WeaponFire();
@@ -63,7 +67,7 @@ void AZS_Player::OnPlayerMouseEnd()
 
 void AZS_Player::OnPlayerChangeWeapon()
 {
-	if (Weapons.Num() <= 1)
+	if (Weapons.Num() <= 1 && ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Stunned)
 		return;
 	int NewWeaponIndex = Weapons.FindLast(CurrentWeapon);
 	NewWeaponIndex = (NewWeaponIndex + 1) % Weapons.Num();
@@ -71,6 +75,21 @@ void AZS_Player::OnPlayerChangeWeapon()
 	CurrentWeapon = Weapons[NewWeaponIndex];
 	CurrentWeapon->OnSwitchWeapon();
 	HideCursorVFX();
+}
+
+void AZS_Player::Stunned()
+{
+	StunVFX->DeactivateSystem();
+	GetWorldTimerManager().ClearTimer(StunHandle);
+	ZSPlayerState->SetPlayerStatus(EPlayerStatus::Default);
+}
+
+void AZS_Player::OnPlayerStunned(float StunTime)
+{
+	StunVFX->ActivateSystem();
+	ZSPlayerState->SetPlayerStatus(EPlayerStatus::Stunned);
+	GetWorldTimerManager().ClearTimer(StunHandle);
+	GetWorldTimerManager().SetTimer(StunHandle, this, &AZS_Player::Stunned, 0.1f, true, StunTime);
 }
 
 void AZS_Player::OnPlayerInteractWithWeapon(UWeaponData* WeaponData, EWeaponState State)
@@ -117,6 +136,39 @@ void AZS_Player::HideCursorVFX()
 	{
 		FXCursorComponent->DeactivateImmediate();
 	}
+}
+
+void AZS_Player::Healing(float Value)
+{
+	ZSPlayerState->SetHealth(ZSPlayerState->GetHealth() + Value);
+}
+
+void AZS_Player::AddTotalAmmo(EWeaponType TypeWeapon, float Value)
+{
+	ZSPlayerState->SetTotalAmmo(TypeWeapon, Value);
+}
+
+int AZS_Player::GetCurrentWeaponTotalAmmo()
+{
+	if(CurrentWeapon == nullptr)
+		return 0;
+
+	return ZSPlayerState->GetTotalAmmo(CurrentWeapon->WeaponData->WeaponType);
+}
+
+UWeaponData* AZS_Player::GetCurrentWeaponData()
+{
+	if (CurrentWeapon == nullptr)
+		return nullptr;
+	return CurrentWeapon->WeaponData;
+}
+
+int AZS_Player::GetCurrentWeaponAmmo()
+{
+	if (CurrentWeapon == nullptr)
+		return 0;
+
+	return CurrentWeapon->CurrentAmmo;
 }
 
 

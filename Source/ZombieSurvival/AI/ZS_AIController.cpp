@@ -16,9 +16,14 @@ AZS_AIController::AZS_AIController(const FObjectInitializer& ObjectInitializer)
 void AZS_AIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	if (AZS_ZombieBase* Enemy = Cast<AZS_ZombieBase>(InPawn)) 
+	GetWorldTimerManager().SetTimer(InitTimeHandle, this, &AZS_AIController::SetupBlackBoard, 0.1f, false, 0.5f);
+}
+
+void AZS_AIController::SetupBlackBoard()
+{
+	if (AZS_ZombieBase* Enemy = Cast<AZS_ZombieBase>(GetPawn()))
 	{
-		if (UBehaviorTree* Tree = Enemy->GetBehaviorTree()) 
+		if (UBehaviorTree* Tree = Enemy->GetBehaviorTree())
 		{
 			UBlackboardComponent* NewBlackBoard;
 			UseBlackboard(Tree->BlackboardAsset, NewBlackBoard);
@@ -36,7 +41,7 @@ void AZS_AIController::SetupPerceptionSystem()
 		SetPerceptionComponent(*CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("Perception Component")));
 		SightConfig->SightRadius = 500.0f;
 		SightConfig->LoseSightRadius = SightConfig->SightRadius + 25.0f;
-		SightConfig->PeripheralVisionAngleDegrees = 120.0f;
+		SightConfig->PeripheralVisionAngleDegrees = 90.0f;
 		SightConfig->SetMaxAge(5.0f);
 		SightConfig->AutoSuccessRangeFromLastSeenLocation = 520.f;
 		SightConfig->DetectionByAffiliation.bDetectEnemies = true;
@@ -53,6 +58,8 @@ void AZS_AIController::OnTargetDetected(AActor* Actor, FAIStimulus const Stimulu
 {
 	if (auto* TargetCharacter = Cast<AZombieSurvivalCharacter>(Actor))
 	{
+		if (!GetBlackboardComponent()) return;
+
 		if (GetBlackboardComponent()->GetValueAsBool("CanSeePlayer")) return;
 		GetBlackboardComponent()->SetValueAsBool("CanSeePlayer", Stimulus.WasSuccessfullySensed());
 		GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);

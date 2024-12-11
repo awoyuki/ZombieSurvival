@@ -5,5 +5,5 @@
 
 AZombieSurvivalGameState::AZombieSurvivalGameState()
 {
-	DataController = CreateDefaultSubobject<UDataController>(TEXT("DataController"));
 }
+

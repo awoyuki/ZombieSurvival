@@ -4,6 +4,7 @@
 #include "ZombieSurvivalPlayerState.h"
 
 
+
 float AZombieSurvivalPlayerState::GetHealth()
 {
 	return Health;
@@ -16,7 +17,7 @@ float AZombieSurvivalPlayerState::GetMaxHealth()
 
 void AZombieSurvivalPlayerState::SetHealth(float NewHeath)
 {
-	Health = NewHeath;
+	Health = FMath::Min(NewHeath, MaxHealth);
 	OnHealthChanged.Broadcast(NewHeath);
 }
 
@@ -29,6 +30,7 @@ EPlayerStatus AZombieSurvivalPlayerState::GetPlayerStatus()
 {
 	return PlayerStatus;
 }
+
 
 void AZombieSurvivalPlayerState::SetPlayerStatus(EPlayerStatus NewStatus)
 {
@@ -61,15 +63,15 @@ int AZombieSurvivalPlayerState::GetTotalAmmo(EWeaponType WeaponType)
 	return 0;
 }
 
-void AZombieSurvivalPlayerState::SetTotalAmmo(EWeaponType WeaponType, int Value)
+void AZombieSurvivalPlayerState::SetTotalAmmo(EWeaponType WeaponType, int Value, const bool bAdd)
 {
 	switch (WeaponType)
 	{
 	case EWeaponType::AssaultRifle:
-		TotalRifleAmmo = Value;
+		TotalRifleAmmo = bAdd ? TotalRifleAmmo + Value : Value;
 		break;
 	case EWeaponType::GrenadeLauncher:
-		TotalGrenadeAmmo = Value;
+		TotalGrenadeAmmo = bAdd ? TotalGrenadeAmmo + Value : Value;
 		break;
 	}
 	OnAmmoChanged.Broadcast(TotalRifleAmmo, TotalGrenadeAmmo);

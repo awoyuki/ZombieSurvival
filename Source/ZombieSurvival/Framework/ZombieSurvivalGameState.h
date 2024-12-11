@@ -7,6 +7,7 @@
 #include "Components/DataController.h"
 #include "ZombieSurvivalGameState.generated.h"
 
+
 /**
  * 
  */
@@ -18,6 +19,4 @@ class ZOMBIESURVIVAL_API AZombieSurvivalGameState : public AGameState
 public:
 	AZombieSurvivalGameState();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UDataController* DataController;
 };

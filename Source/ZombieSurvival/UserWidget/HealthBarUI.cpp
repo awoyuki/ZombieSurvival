@@ -3,3 +3,12 @@
 
 #include "HealthBarUI.h"
 
+void UHealthBarUI::NativeConstruct()
+{
+	Super::NativeConstruct();
+}
+
+void UHealthBarUI::SetBarValuePercent(float const value)
+{
+	HealthValue->SetPercent(value);
+}

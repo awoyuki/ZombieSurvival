@@ -23,6 +23,19 @@ AWeaponBase::AWeaponBase()
 	MuzzleVFX->SetupAttachment(WeaponMeshComponent);
 	MuzzleVFX->SetAutoActivate(false);
 
+	// Load from asset
+	static ConstructorHelpers::FObjectFinder<USoundWave> PickupWeaponVFXAsset{ TEXT("/Game/ZombieSurvivals/Audio/Common/pickup_weapon.pickup_weapon") };
+	if (PickupWeaponVFXAsset.Succeeded()) PickupWeaponVFX = PickupWeaponVFXAsset.Object;
+
+	static ConstructorHelpers::FObjectFinder<USoundWave> SwitchWeaponVFXAsset{ TEXT("/Game/ZombieSurvivals/Audio/Common/switch_weapon.switch_weapon") };
+	if (SwitchWeaponVFXAsset.Succeeded()) SwitchWeaponVFX = SwitchWeaponVFXAsset.Object;
+
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> BulletDefaultImpactAsset{ TEXT("/Game/ZombieSurvivals/Effects/ParticleSystems/Weapons/AssaultRifle/Impacts/VFX_Impact_Default.VFX_Impact_Default") };
+	if (BulletDefaultImpactAsset.Succeeded()) BulletDefaultImpact = BulletDefaultImpactAsset.Object;
+
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> BulletBodyImpactAsset{ TEXT("/Game/ZombieSurvivals/Effects/ParticleSystems/Gameplay/Player/P_body_bullet_impact.P_body_bullet_impact") };
+	if (BulletBodyImpactAsset.Succeeded()) BulletBodyImpact = BulletBodyImpactAsset.Object;
+
 }
 
 // Called when the game starts or when spawned
@@ -68,7 +81,7 @@ void AWeaponBase::OnEquippedWeapon(AZS_Player* NewOwner, UWeaponData* NewWeaponD
 	}
 
 	const UObject* WorldContextObject = GetWorld();
-	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, ZSGameState->DataController->CommonData->PickupWeapon, GetActorLocation());
+	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, PickupWeaponVFX, GetActorLocation());
 
 	// Default Ammo 
 	CurrentAmmo = WeaponData->AmmoPerMag;
@@ -82,7 +95,7 @@ void AWeaponBase::OnSwitchWeapon()
 	WeaponState = EWeaponState::Holding;
 	ActiveWeapon(true);
 	const UObject* WorldContextObject = GetWorld();
-	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, ZSGameState->DataController->CommonData->SwitchWeapon, GetActorLocation());
+	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, SwitchWeaponVFX, GetActorLocation());
 	// Set Character MovementSpeed
 	ZSPlayer->UpdateMovementSpeed(WeaponData->MovementSpeed);
 	WeaponCheckEmpty();
@@ -230,7 +243,7 @@ void AWeaponBase::WeaponFireOnLineTrace()
 			SpawnTransform.SetRotation(UKismetMathLibrary::MakeRotFromX(Hit.ImpactNormal).Quaternion());
 			const bool isHitEnemy = Hit.GetActor()->ActorHasTag(TEXT("Enemy"));
 			UParticleSystem* BulletImpact = (isHitEnemy) ?
-				ZSGameState->DataController->CommonData->BulletBodyImpact : ZSGameState->DataController->CommonData->BulletDefaultImpact;
+				BulletBodyImpact : BulletDefaultImpact;
 
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BulletImpact, SpawnTransform, true, EPSCPoolMethod::AutoRelease);
 
@@ -238,7 +251,7 @@ void AWeaponBase::WeaponFireOnLineTrace()
 			if (isHitEnemy) 
 			{
 				AController* PlayerController = Owner->GetInstigatorController();
-				UGameplayStatics::ApplyPointDamage(Hit.GetActor(), WeaponData->BaseDamage,Hit.ImpactPoint, Hit, PlayerController, this, nullptr);
+				UGameplayStatics::ApplyPointDamage(Hit.GetActor(), WeaponData->BaseDamage,Hit.ImpactPoint, Hit, PlayerController, this, UDamageType::StaticClass());
 			}
 		}
 	}

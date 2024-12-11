@@ -46,7 +46,7 @@ EBTNodeResult::Type UBTTask_AttackPlayer::ExecuteTask(UBehaviorTreeComponent& Ow
 					// Then Attack
 					Enemy->SetEnemyState(EEnemyState::Attack);
 					// FinishWithSuccess
-					OwnerComp.GetBlackboardComponent()->SetValueAsFloat("AttackTime", Enemy->EnemyData->AttackSpeed);
+					OwnerComp.GetBlackboardComponent()->SetValueAsFloat("AttackTime", Enemy->GetCurrentAttackAnimationDuration());
 					FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 					return EBTNodeResult::Succeeded;
 				}
@@ -60,5 +60,5 @@ EBTNodeResult::Type UBTTask_AttackPlayer::ExecuteTask(UBehaviorTreeComponent& Ow
 
 bool UBTTask_AttackPlayer::DoesMontageFinish(AZS_ZombieBase* Enemy)
 {
-	return Enemy->GetMesh()->GetAnimInstance()->Montage_GetIsStopped(Enemy->EnemyData->AttackAnimation);
+	return Enemy->DoesCurrentMontageFinish();
 }

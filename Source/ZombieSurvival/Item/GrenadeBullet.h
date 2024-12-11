@@ -28,7 +28,9 @@ public:
 
 	AGrenadeBullet();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	virtual void UpdateBulletVelocity(FVector NewVelocity) override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet Data")
 	float BulletRadius = 150;
 
 	FVector CalculateProjectileVelocity(FVector StartLocation, FVector Target);

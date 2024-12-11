@@ -3,11 +3,6 @@
 
 #include "GrenadeBullet.h"
 #include "ZombieSurvival/PoolingSystem/PoolSubsystem.h"
-#include "Sound/SoundCue.h"
-#include <Kismet/KismetMathLibrary.h>
-#include <Kismet/GameplayStatics.h>
-
-
 
 AGrenadeBullet::AGrenadeBullet()
 {
@@ -32,24 +27,19 @@ FVector AGrenadeBullet::CalculateProjectileVelocity(FVector StartLocation, FVect
 
 void AGrenadeBullet::StartMoving(FVector Target, float Damage)
 {
-	Super::StartMoving(Target, Damage);
 	TargetLocation = Target;
-	FVector InitialVelocity = CalculateProjectileVelocity(GetActorLocation(), Target);
-	if (ProjectileComponent)
-	{
-		ProjectileComponent->Velocity = InitialVelocity;
-		ProjectileComponent->UpdateComponentVelocity();
-	}
+	Super::StartMoving(Target, Damage);
 }
 
 void AGrenadeBullet::EndMove(const FHitResult& Hit)
 {
 	const UObject* WorldContextObject = GetWorld();
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactFX, GetActorTransform(), true, EPSCPoolMethod::AutoRelease);
-	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, ImpactSFX, GetActorLocation());
-
 	const TArray<AActor*> IgnoreActor = { Owner };
-
 	UGameplayStatics::ApplyRadialDamage(WorldContextObject, BulletDamage, GetActorLocation(), BulletRadius, nullptr, IgnoreActor, Owner, Owner->GetInstigatorController(), true, ECC_Camera);
 	Super::EndMove(Hit);
+}
+
+void AGrenadeBullet::UpdateBulletVelocity(FVector NewVelocity)
+{
+	ProjectileComponent->Velocity = CalculateProjectileVelocity(GetActorLocation(), TargetLocation);
 }

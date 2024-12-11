@@ -24,5 +24,5 @@ protected:
 	bool bSearchRandom = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy AI")
-	float SearchRadius = 550.0f;
+	float SearchRadius = 950.0f;
 };

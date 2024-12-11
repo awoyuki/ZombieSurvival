@@ -21,11 +21,15 @@ public:
 
 protected:
 
+	FTimerHandle InitTimeHandle;
+
 	virtual void OnPossess(APawn* InPawn) override;
 
 private:
 
 	class UAISenseConfig_Sight* SightConfig;
+
+	void SetupBlackBoard();
 
 	void SetupPerceptionSystem();
 

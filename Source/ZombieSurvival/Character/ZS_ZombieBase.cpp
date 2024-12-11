@@ -1,10 +1,14 @@
 
 #include "ZS_ZombieBase.h"
+#include "Ability/EnemyAbilityBase.h"
+#include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "ZombieSurvival/AI/ZS_AIController.h"
+#include "ZombieSurvival/UserWidget/HealthBarUI.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
+#include <ZombieSurvival/Item/LevelController.h>
 
 // Sets default values
 AZS_ZombieBase::AZS_ZombieBase()
@@ -13,16 +17,29 @@ AZS_ZombieBase::AZS_ZombieBase()
 	PrimaryActorTick.bCanEverTick = true;
 
 	AIControllerClass = AZS_AIController::StaticClass();
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	GetMesh()->SetRelativeLocation(FVector(0, 0, -90));
 	GetMesh()->SetRelativeRotation(FRotator(0, -90, 0).Quaternion());
 	Tags.Add(TEXT("Enemy"));
+
+	//Bind widget
+	HealthBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
+	HealthBar->SetupAttachment(RootComponent);
+	HealthBar->SetWidgetSpace(EWidgetSpace::Screen);
+	HealthBar->SetRelativeLocation(FVector(0, 0, 90));
+	HealthBar->SetDrawSize(FVector2D(80, 10));
+	static ConstructorHelpers::FClassFinder<UUserWidget> HealthBarClass{ TEXT("/Game/ZombieSurvivals/Blueprints/Widget/UIHealthBar") }; 
+	if (HealthBarClass.Succeeded()) 
+	{
+		HealthBar->SetWidgetClass((HealthBarClass.Class));
+	}
 }
 
 void AZS_ZombieBase::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	OnInitEnemy();
+	OnInitEnemy(false);
 }
 
 // Called when the game starts or when spawned
@@ -30,15 +47,22 @@ void AZS_ZombieBase::BeginPlay()
 {
 	Super::BeginPlay();
 	AIZSController = Cast<AZS_AIController>(GetController());
+	OnSpawnEnemy(EnemyData);
 }
 
 // Called every frame
 void AZS_ZombieBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if (EnemyData == nullptr) return;
+	if (HealthBar->GetUserWidgetObject() == nullptr) return;
+	if (auto const widget = CastChecked<UHealthBarUI>(HealthBar->GetUserWidgetObject()))
+	{
+		widget->SetBarValuePercent(CurrentHealth / EnemyData->Health);
+	}
 }
 
-void AZS_ZombieBase::OnInitEnemy()
+void AZS_ZombieBase::OnInitEnemy(bool bIsContruction)
 {
 	if (EnemyData == nullptr)
 		return;
@@ -46,13 +70,26 @@ void AZS_ZombieBase::OnInitEnemy()
 	CurrentHealth = EnemyData->Health;
 	GetMesh()->ResetAllBodiesSimulatePhysics();
 	GetMesh()->SetSkeletalMesh(EnemyData->Mesh);	
+
+	if (!bIsContruction)
+	{
+		Abilities.Empty();
+		auto InitAbilities = GetComponentsByClass(UEnemyAbilityBase::StaticClass());
+		for (int i = 0; i < InitAbilities.Num(); i++)
+		{
+			if (auto Ability = Cast<UEnemyAbilityBase>(InitAbilities[i]))
+				Abilities.Add(Ability);
+		}
+	}
 }
 
 void AZS_ZombieBase::OnSpawnEnemy(UEnemyData* NewData)
 {
 	EnemyData = NewData;
-	OnInitEnemy();
+	OnInitEnemy(false);
+	HealthBar->SetVisibility(true);
 	CurrentState = EEnemyState::Idle;
+	SelectAbility();
 }
 
 void AZS_ZombieBase::SetEnemyState(EEnemyState newState)
@@ -63,22 +100,49 @@ void AZS_ZombieBase::SetEnemyState(EEnemyState newState)
 	CurrentState = newState;
 	switch (CurrentState)
 	{
+	case EEnemyState::Idle:SelectAbility();
+		break;
 	case EEnemyState::Patrol:EnemyPatrol();
 		break;
 	case EEnemyState::Chasing:EnemyChase();
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, TEXT("Chasing"));
 		break;
 	case EEnemyState::Attack:EnemyAttack();
 		break;
-	case EEnemyState::Death:
+	case EEnemyState::Death:EnemyDeath();
 		break;
+	}
+}
+
+void AZS_ZombieBase::SelectAbility()
+{
+	if (Abilities.Num() == 0)
+	{
+		SetEnemyState(EEnemyState::Idle);
+		return;
+	}
+
+	int32 n = Abilities.Num();
+
+	int32 TotalWeight = n * (n + 1) / 2;
+	int32 RandomValue = FMath::RandRange(1, TotalWeight);
+
+	for (int32 i = 0; i < n; ++i)
+	{
+		int32 Weight = n - i;
+		RandomValue -= Weight;
+		if (RandomValue <= 0)
+		{
+			CurrentAbility = Abilities[i];
+			CurrentAbility->OnSelectAbility();
+			return;
+		}
 	}
 }
 
 void AZS_ZombieBase::EnemyPatrol()
 {
 	GetCharacterMovement()->MaxWalkSpeed = 125;
-	GetMesh()->GetAnimInstance()->Montage_Stop(0.1f);
+	GetMesh()->GetAnimInstance()->Montage_Stop(0.1f); 
 }
 void AZS_ZombieBase::EnemyChase()
 {
@@ -87,33 +151,64 @@ void AZS_ZombieBase::EnemyChase()
 }
 void AZS_ZombieBase::EnemyAttack()
 {
-	PlayAnimMontage(EnemyData->AttackAnimation, 1, NAME_None);
+	if(CurrentAbility)
+		CurrentAbility->ActiveAbility();
+
 }
 void AZS_ZombieBase::EnemyDeath()
 {
+	AIZSController->GetBlackboardComponent()->SetValueAsEnum("EnemyState", (uint8)CurrentState);
+	GetMesh()->SetSimulatePhysics(true);
+	GetWorldTimerManager().SetTimer(DeathTimerHandle, this, &AZS_ZombieBase::OnEnemyRemoveFromWorld, 0.1f, false, 3.0f);
+	GetMesh()->GetAnimInstance()->Montage_Stop(0.1f);
+	HealthBar->SetVisibility(false);
+	//Call to spawn item 
+	if (auto* ZombieZone = CastChecked<AZombieZone>(GetOwner()))
+	{
+		if (ZombieZone->LevelOwner)
+			ZombieZone->LevelOwner->SpawnRandomItem(GetActorLocation());
+	}
 }
 
+float AZS_ZombieBase::GetCurrentAttackAnimationDuration()
+{
+	UAnimInstance* AnimInstance = (GetMesh()) ? GetMesh()->GetAnimInstance() : nullptr;
+	if (AnimInstance)
+	{
+		UAnimMontage* Montage = AnimInstance->GetCurrentActiveMontage();
+		if (Montage) 
+		{
+			return Montage->GetPlayLength() * AnimInstance->Montage_GetPlayRate(Montage);
+		}
+	}
+	return 0;
+}
+
+bool AZS_ZombieBase::DoesCurrentMontageFinish()
+{
+	UAnimInstance* AnimInstance = (GetMesh()) ? GetMesh()->GetAnimInstance() : nullptr;
+	if (AnimInstance)
+	{
+		UAnimMontage* Montage = AnimInstance->GetCurrentActiveMontage();
+		if (Montage)
+		{
+			return AnimInstance->Montage_GetIsStopped(Montage);
+		}
+	}
+	return true;
+}
+
+UBlackboardComponent* AZS_ZombieBase::GetBlackBoardFromAIController()
+{
+	if(AIZSController)
+		return AIZSController->GetBlackboardComponent();
+	return nullptr;
+}
 
 void AZS_ZombieBase::EnemyAttacking()
 {
-	if (GetMesh()->DoesSocketExist("weapon_r_socket"))
-	{
-		FHitResult Hit;
-		FCollisionShape ColShape = FCollisionShape::MakeSphere(EnemyData->AttackRange);
-		FVector Location = GetMesh()->GetSocketLocation("weapon_r_socket");
-		GetWorld()->SweepSingleByChannel(Hit, Location, Location, FQuat::Identity, ECC_Camera, ColShape);
-
-		if (Hit.bBlockingHit)
-		{
-			if (Hit.GetActor()->ActorHasTag("Player"))
-			{
-				AController* EnemyController = Owner->GetInstigatorController();
-				UGameplayStatics::ApplyPointDamage(Hit.GetActor(), EnemyData->BaseDamage, Hit.ImpactPoint, Hit, EnemyController, this, nullptr);
-				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, TEXT("Hit Player!"));
-			}
-		}
-	}
-	SetEnemyState(EEnemyState::Idle);
+	CurrentAbility->EndAbility();
+	CurrentAbility = nullptr;
 }
 
 
@@ -148,16 +243,9 @@ float AZS_ZombieBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
 	if (CurrentHealth <= 0)
 	{
-		OnEnemyDeath();
+		SetEnemyState(EEnemyState::Death);
 	}
 	return 0.0f;
-}
-
-void AZS_ZombieBase::OnEnemyDeath()
-{
-	GetMesh()->SetSimulatePhysics(true);
-	GetWorldTimerManager().SetTimer(DeathTimerHandle, this, &AZS_ZombieBase::OnEnemyRemoveFromWorld, 0.1f, false, 3.0f);
-	SetEnemyState(EEnemyState::Death);
 }
 
 void AZS_ZombieBase::OnEnemyRemoveFromWorld()
@@ -188,4 +276,9 @@ float AZS_ZombieBase::PlayAnimMontage(class UAnimMontage* AnimMontage, float InP
 		}
 	}
 	return 0.f;
+}
+
+void AZS_ZombieBase::CreateAbility(TSubclassOf<UEnemyAbilityBase> AbilityClass, int index, UEnemyAbilityBase*& Ability)
+{
+	Ability = CreateAbility<UEnemyAbilityBase>(AbilityClass, index);
 }

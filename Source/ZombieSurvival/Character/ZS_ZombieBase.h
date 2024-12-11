@@ -8,7 +8,7 @@
 #include "ZS_ZombieBase.generated.h"
 
 
-UENUM(BlueprintType)
+UENUM(BlueprintType, Blueprintable)
 enum class EEnemyState : uint8
 {
 	Idle UMETA(DisplayName = "Idle"),
@@ -28,6 +28,10 @@ public:
 	// Sets default values for this empty's properties
 	AZS_ZombieBase();
 
+	//Widget Component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy Property")
+	class UWidgetComponent* HealthBar;
+
 	FTimerHandle DeathTimerHandle;
 
 	//Stored Data
@@ -39,6 +43,19 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy Property")
 	EEnemyState CurrentState;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy Property")
+	TArray<class UEnemyAbilityBase*> Abilities;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy Property")
+	class UEnemyAbilityBase* CurrentAbility;
+
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy Property")
+	float CurrentDamage = 10;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy Property")
+	float CurrentAttackRange = 100;
 
 protected:
 	// Called when the game starts or when spawned
@@ -52,11 +69,13 @@ protected:
 	// Cached Framework
 	class AZS_AIController* AIZSController;
 
-public:
+	public:
+
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void OnInitEnemy();
+	virtual void OnInitEnemy(bool bIsContruction);
 
 	virtual void OnSpawnEnemy(UEnemyData* NewData);
 
@@ -66,11 +85,11 @@ public:
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
-	virtual void OnEnemyDeath();
-
 	virtual void OnEnemyRemoveFromWorld();	
 
 	UBehaviorTree* GetBehaviorTree() const;
+
+	virtual void SelectAbility();
 
 	virtual void EnemyPatrol();
 
@@ -78,11 +97,34 @@ public:
 
 	virtual void EnemyAttack();
 
+	virtual void EnemyDeath();
+
 	UFUNCTION(BlueprintCallable, Category = "Enemy Actions")
 	void EnemyAttacking();
 
-	virtual void EnemyDeath();
+	float GetCurrentAttackAnimationDuration();
 
+	bool DoesCurrentMontageFinish();
 
+	UBlackboardComponent* GetBlackBoardFromAIController();
+
+	UFUNCTION(BlueprintCallable, Category = "Enemy Ability", meta = (DeterminesOutputType = "AbilityClass", DynamicOutputParam = "Ability"))
+	void CreateAbility(TSubclassOf<UEnemyAbilityBase> AbilityClass, int index, UEnemyAbilityBase*& Ability);
+
+	template<typename T>
+	T* CreateAbility(TSubclassOf<UEnemyAbilityBase> AbilityClass, int index);
 
 };
+
+template<typename T>
+inline T* AZS_ZombieBase::CreateAbility(TSubclassOf<UEnemyAbilityBase> AbilityClass, int index)
+{
+	T* Ability = NewObject<T>(this, AbilityClass, FName(*FString::Printf(TEXT("Ability%d"), (index + 1))));
+	if (Ability)
+	{
+		Ability->CreationMethod = EComponentCreationMethod::Instance;
+		Ability->RegisterComponent();
+		AddInstanceComponent(Ability);
+	}	
+	return Ability;
+}

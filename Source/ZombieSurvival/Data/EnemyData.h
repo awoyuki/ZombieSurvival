@@ -24,33 +24,21 @@ class ZOMBIESURVIVAL_API UEnemyData : public UDataAsset
 
 public:
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Data")
 	int ID;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Data")
 	FName EnemyName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Data")
 	USkeletalMesh* Mesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	EEnemyType EnemyType;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Data")
 	float Health = 100;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	float AttackRange = 150;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	float AttackSpeed = 3;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Data")
 	float BaseDamage = 25;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Data")
 	float MovementSpeed = 300;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	class UAnimMontage* AttackAnimation;
 };

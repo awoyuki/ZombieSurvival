@@ -36,9 +36,9 @@ void AWeaponItem::OnConstruction(const FTransform& Transform)
 	}
 }
 
-void AWeaponItem::OnPlayerOverlap(AActor* PlayerActor)
+void AWeaponItem::OnPlayerOverlap_Implementation(AActor* PlayerActor)
 {
-	Super::OnPlayerOverlap(PlayerActor);
+	Super::OnPlayerOverlap_Implementation(PlayerActor);
 	if (AZS_Player* Player = CastChecked<AZS_Player>(PlayerActor)) 
 	{
 		AWeaponBase* NewWeapon = PoolSubsystem->SpawnFromPool<AWeaponBase>(AWeaponBase::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);

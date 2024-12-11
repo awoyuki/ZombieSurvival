@@ -2,6 +2,7 @@
 
 
 #include "BulletBase.h"
+#include "Sound/SoundCue.h"
 #include "ZombieSurvival/PoolingSystem/PoolSubsystem.h"
 
 // Sets default values
@@ -36,6 +37,11 @@ void ABulletBase::BeginPlay()
 	
 }
 
+void ABulletBase::UpdateBulletVelocity(FVector NewVelocity)
+{
+	ProjectileComponent->Velocity = GetActorTransform().TransformVector(NewVelocity);
+}
+
 // Called every frame
 void ABulletBase::Tick(float DeltaTime)
 {
@@ -49,6 +55,8 @@ void ABulletBase::StartMoving(FVector Target, float Damage)
 	ProjectileComponent->SetActive(true);
 	ProjectileComponent->InitialSpeed = BulletSpeed;
 	ProjectileComponent->MaxSpeed = BulletSpeed*10;
+	UpdateBulletVelocity(BulletVeclocity);
+	ProjectileComponent->UpdateComponentVelocity();
 }
 
 void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
@@ -59,6 +67,10 @@ void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
 
 void ABulletBase::EndMove(const FHitResult& Hit)
 {
+	const UObject* WorldContextObject = GetWorld();
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactFX, GetActorTransform(), true, EPSCPoolMethod::AutoRelease);
+	UGameplayStatics::PlaySoundAtLocation(WorldContextObject, ImpactSFX, GetActorLocation());
+
 	ProjectileComponent->SetActive(false);
 	GetWorld()->GetSubsystem<UPoolSubsystem>()->ReturnToPool(this);
 }

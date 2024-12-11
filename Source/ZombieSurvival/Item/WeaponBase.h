@@ -38,7 +38,20 @@ public:
 	UParticleSystemComponent* MuzzleVFX;
 
 	// Weapon Stored Data
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UWeaponData* WeaponData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class USoundWave* PickupWeaponVFX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class USoundWave* SwitchWeaponVFX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class UParticleSystem* BulletDefaultImpact;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class UParticleSystem* BulletBodyImpact;
 
 	// Weapon Status
 	FTimerHandle FireTimerHandle;

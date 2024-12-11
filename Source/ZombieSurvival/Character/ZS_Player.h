@@ -20,18 +20,23 @@ public:
 	// Sets default values for this character's properties
 	AZS_Player();
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "APlayerZS")
+	UWeaponData* DefaultWeaponData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "APlayerZS")
+	UParticleSystemComponent* StunVFX;
+
 	/** FX Class that we will spawn */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "APlayerZS")
 	UNiagaraSystem* FXCursor;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "APlayerZS")
 	UNiagaraComponent* FXCursorComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "APlayerZS")
 	FName WeaponSocket = TEXT("weapon_r_socket");
 
 	// Current Weapon in use
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	AWeaponBase* CurrentWeapon;
 
 	// List of weapon
@@ -40,9 +45,14 @@ public:
 
 	FTimerHandle CursorFXHandle;
 
+	FTimerHandle StunHandle;
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	void Stunned();
 
 public:
 	// Called every frame
@@ -58,6 +68,8 @@ public:
 
 	virtual void OnPlayerChangeWeapon() override;
 
+	virtual void OnPlayerStunned(float StunTime);
+
 	virtual void OnPlayerInteractWithWeapon(UWeaponData* WeaponData, EWeaponState State);
 
 	virtual void UpdateMovementSpeed(float NewSpeed);
@@ -67,5 +79,20 @@ public:
 	virtual void UpdateCursorVFXLocation();
 
 	virtual void HideCursorVFX();
+
+	UFUNCTION(BlueprintCallable)
+	void Healing(float Value);
+
+	UFUNCTION(BlueprintCallable)
+	void AddTotalAmmo(EWeaponType TypeWeapon, float Value);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int GetCurrentWeaponTotalAmmo();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UWeaponData* GetCurrentWeaponData();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int GetCurrentWeaponAmmo();
 
 };

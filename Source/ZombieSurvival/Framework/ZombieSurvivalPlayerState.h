@@ -44,6 +44,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Stored Data")
 	int TotalGrenadeAmmo = 12;
 
+
 public:
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Player Stored Data")
@@ -77,6 +78,6 @@ public:
 	int GetTotalAmmo(EWeaponType WeaponType);
 
 	UFUNCTION(BlueprintCallable, Category = "Player Stored Data")
-	void SetTotalAmmo(EWeaponType WeaponType, int Value);
+	void SetTotalAmmo(EWeaponType WeaponType, int Value, const bool bAdd = true);
 
 };

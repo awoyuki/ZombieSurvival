@@ -14,6 +14,9 @@ class AZombieSurvivalCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
+private:
+	double CurrentAngular;
+
 public:
 	AZombieSurvivalCharacter();
 
@@ -54,6 +57,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Property)
 	double AngularDistanceBetweenPlayerAndCursor();
 
+	void UpdateAngularDistanceBetweenPlayerAndCursor();	
+
 	FVector GetMouseLocation();
 
 	bool IsDead();
@@ -78,6 +83,8 @@ protected:
 	virtual void OnPlayerMouseEnd();
 
 	virtual void OnPlayerChangeWeapon();
+
+	virtual void OnPlayerDead();
 
 	virtual void FixPlayerRotation();
 

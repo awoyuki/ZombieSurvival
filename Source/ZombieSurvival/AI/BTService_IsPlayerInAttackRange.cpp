@@ -39,7 +39,9 @@ void UBTService_IsPlayerInAttackRange::OnBecomeRelevant(UBehaviorTreeComponent& 
 			}
 			if (auto* ZSPlayer = Cast<AZombieSurvivalCharacter>(Player)) 
 			{
-				EnemyController->GetBlackboardComponent()->SetValueAsBool(GetSelectedBlackboardKey(), Enemy->GetDistanceTo(Player) <= Enemy->EnemyData->AttackRange );
+				EnemyController->GetBlackboardComponent()->SetValueAsBool(GetSelectedBlackboardKey(), Enemy->GetDistanceTo(Player) <= Enemy->CurrentAttackRange &&
+					EnemyController->GetBlackboardComponent()->GetValueAsBool("CanSeePlayer") && !ZSPlayer->IsDead()
+				);
 			}				
 		}
 	}

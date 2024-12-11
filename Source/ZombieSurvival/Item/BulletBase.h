@@ -7,6 +7,8 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "ZombieSurvival/PoolingSystem/Poolable.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "BulletBase.generated.h"
 
 UCLASS(Blueprintable)
@@ -15,6 +17,7 @@ class ZOMBIESURVIVAL_API ABulletBase : public AActor, public IPoolable
 	GENERATED_BODY()
 	
 protected:
+
 	float BulletDamage;
 
 public:	
@@ -34,6 +37,9 @@ public:
 	float BulletSpeed = 800.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet Data")
+	FVector BulletVeclocity = FVector(2000.0f,0,0);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet Data")
 	class UParticleSystem* ImpactFX;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet Data")
@@ -48,6 +54,8 @@ protected:
 	void OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
 
 public:	
+
+	virtual void UpdateBulletVelocity(FVector NewVelocity);
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

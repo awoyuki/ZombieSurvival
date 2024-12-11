@@ -44,17 +44,19 @@ void ABaseItem::OnSphereBeginOverlapEvent(UPrimitiveComponent* OverlappedCompone
 		return;
 	}
 
-	if(OtherActor->ActorHasTag(TEXT("Player")))
+	if (OtherActor->ActorHasTag(TEXT("Player"))) 
+	{
 		OnPlayerOverlap(OtherActor);
+		PoolSubsystem->ReturnToPool(this);
+	}
 
-}
-
-void ABaseItem::OnPlayerOverlap(AActor* PlayerActor)
-{
-	PoolSubsystem->ReturnToPool(this);
 }
 
 void ABaseItem::OnItemSpawn()
+{
+}
+
+void ABaseItem::OnPlayerOverlap_Implementation(AActor* PlayerActor)
 {
 }
 

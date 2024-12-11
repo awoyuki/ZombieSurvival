@@ -92,7 +92,12 @@ void AZombieSurvivalCharacter::SetupPlayerInputComponent(class UInputComponent* 
 void AZombieSurvivalCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-	FixPlayerRotation();
+	if (ZSPlayerState)
+	{
+		if (ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Stunned) return;
+		UpdateAngularDistanceBetweenPlayerAndCursor();
+		FixPlayerRotation();
+	}
 }
 
 
@@ -124,6 +129,8 @@ bool AZombieSurvivalCharacter::IsDead()
 
 void AZombieSurvivalCharacter::OnPlayerMove(const FInputActionValue& value)
 {
+	if (ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Stunned) return;
+
 	FVector2D InputVector = value.Get<FVector2D>();
 
 	const FRotator Rotation = GetControlRotation();
@@ -149,6 +156,15 @@ void AZombieSurvivalCharacter::OnPlayerChangeWeapon()
 {
 }
 
+void AZombieSurvivalCharacter::OnPlayerDead()
+{
+	if (StimulusSource)
+	{
+		StimulusSource->UnregisterFromSense(TSubclassOf<UAISense_Sight>());
+		StimulusSource->UnregisterFromPerceptionSystem();
+	}
+}
+
 void AZombieSurvivalCharacter::FixPlayerRotation()
 {
 	float rotateAngle = AngularDistanceBetweenPlayerAndCursor();
@@ -171,6 +187,11 @@ void AZombieSurvivalCharacter::SetupStimulusSource()
 
 double AZombieSurvivalCharacter::AngularDistanceBetweenPlayerAndCursor()
 {
+	return CurrentAngular;
+}
+
+void AZombieSurvivalCharacter::UpdateAngularDistanceBetweenPlayerAndCursor()
+{
 	FVector PawnLocation = GetActorLocation();
 	FVector MouseLocation = GetMouseLocation();
 	MouseLocation.Z = PawnLocation.Z;
@@ -185,8 +206,7 @@ double AZombieSurvivalCharacter::AngularDistanceBetweenPlayerAndCursor()
 	FQuat TargetQuat = TargetRotator.Quaternion();
 
 	double AngleRadians = ControllerQuat.AngularDistance(TargetQuat);
-	return UKismetMathLibrary::RadiansToDegrees(AngleRadians) * (dotValue > 0 ? 1 : -1);
-
+	CurrentAngular = UKismetMathLibrary::RadiansToDegrees(AngleRadians) * (dotValue > 0 ? 1 : -1);
 }
 
 FVector AZombieSurvivalCharacter::GetMouseLocation()

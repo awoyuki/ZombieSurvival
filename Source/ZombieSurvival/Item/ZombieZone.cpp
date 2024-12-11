@@ -2,7 +2,6 @@
 
 
 #include "ZombieZone.h"
-#include "ZombieSurvival/Character/ZS_ZombieBase.h"
 #include "ZombieSurvival/PoolingSystem/PoolSubsystem.h"
 #include "Kismet/KismetMathLibrary.h"
 
@@ -22,7 +21,6 @@ AZombieZone::AZombieZone()
 void AZombieZone::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
@@ -32,9 +30,13 @@ void AZombieZone::Tick(float DeltaTime)
 
 }
 
-void AZombieZone::SpawnZombie(int NumberOfZombies)
+void AZombieZone::SpawnZombie(ALevelController* NewLevelOwner)
 {
+	LevelOwner = NewLevelOwner;
 	if (TriggerBox != nullptr) {
+
+		int NumberOfZombies = FMath::FRandRange(MaxNumberOfZombies/1.5f, MaxNumberOfZombies);
+
 		UPoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UPoolSubsystem>();
 		for (int i = 0; i < NumberOfZombies; i++)
 		{
@@ -43,10 +45,31 @@ void AZombieZone::SpawnZombie(int NumberOfZombies)
 			FVector RandomPoint = FMath::RandPointInBox(TriggerBox->Bounds.GetBox());
 			FMatrix LocalToWorldInverse = GetActorTransform().ToMatrixWithScale();
 			Location = UKismetMathLibrary::GreaterGreater_VectorRotator(LocalToWorldInverse.GetOrigin() - RandomPoint, LocalToWorldInverse.Rotator()) + GetActorLocation();
-
+			Location.Z = GetActorLocation().Z;
 			FRotator Rotation(0, FMath::FRandRange(-180.f, 180.f), 0);
 
-			AZS_ZombieBase* NewZombie = PoolSubsystem->SpawnFromPool<AZS_ZombieBase>(AZS_ZombieBase::StaticClass(), Location, Rotation);
+			if (ZombieClasses.Num() == 0)
+			{
+				return;
+			}
+
+			int32 n = ZombieClasses.Num();
+
+			int32 TotalWeight = n * (n + 1) / 2;
+			int32 RandomValue = FMath::RandRange(1, TotalWeight);
+
+			for (int32 j = 0; j < n; ++j)
+			{
+				int32 Weight = n - j;
+				RandomValue -= Weight;
+				if (RandomValue <= 0)
+				{
+					AZS_ZombieBase* NewZombie = PoolSubsystem->SpawnFromPool<AZS_ZombieBase>(ZombieClasses[j], Location, Rotation);
+					NewZombie->SetOwner(this);
+					break;
+				}
+			}
+
 		}
 	}
 }

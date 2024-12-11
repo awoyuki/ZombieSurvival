@@ -36,5 +36,5 @@ public:
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-	virtual void OnPlayerOverlap(AActor* PlayerActor) override;
+	virtual void OnPlayerOverlap_Implementation(AActor* PlayerActor) override;
 };
