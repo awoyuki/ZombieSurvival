@@ -66,11 +66,21 @@ void AZombieZone::SpawnZombie(ALevelController* NewLevelOwner)
 				{
 					AZS_ZombieBase* NewZombie = PoolSubsystem->SpawnFromPool<AZS_ZombieBase>(ZombieClasses[j], Location, Rotation);
 					NewZombie->SetOwner(this);
+					NewZombie->OnSpawnEnemy(nullptr);
+					ZombieList.Add(NewZombie);
 					break;
 				}
 			}
 
 		}
+	}
+}
+
+void AZombieZone::KillZombie()
+{
+	for (auto Enemy: ZombieList)
+	{
+		Enemy->SetEnemyState(EEnemyState::Death);
 	}
 }
 

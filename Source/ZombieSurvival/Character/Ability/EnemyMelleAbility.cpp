@@ -36,12 +36,9 @@ void UEnemyMelleAbility::EndAbility()
 			{
 				AController* EnemyController = ZSEnemy->GetInstigatorController();
 				UGameplayStatics::ApplyPointDamage(Hit.GetActor(), ZSEnemy->CurrentDamage, Hit.ImpactPoint, Hit, EnemyController, ZSEnemy, UDamageType::StaticClass());
-				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, TEXT("Hit Player!"));
 				ZSEnemy->SetEnemyState(EEnemyState::Idle);
 				return;
 			}
-			if(Hit.GetComponent())
-				UE_LOG(LogClass, Warning, TEXT("Hit Component: %s"), *Hit.GetComponent()->GetName());
 		}
 	}
 }

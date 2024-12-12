@@ -60,12 +60,10 @@ void AWeaponBase::Tick(float DeltaTime)
 
 void AWeaponBase::OnEquippedWeapon(AZS_Player* NewOwner, UWeaponData* NewWeaponData)
 {
-	ZSPlayer = CastChecked<AZS_Player>(Owner);
+	ZSPlayer = NewOwner;
 	ZSPlayerState = Cast<AZombieSurvivalPlayerState>(ZSPlayer->GetPlayerState());
-
 	WeaponState = EWeaponState::Holding;
 	WeaponData = NewWeaponData;
-
 	if (IsValid(WeaponData->WeaponMesh)) 
 	{
 		WeaponMeshComponent->SetStaticMesh(WeaponData->WeaponMesh);		
@@ -164,7 +162,14 @@ void AWeaponBase::WeaponEndFire()
 
 void AWeaponBase::WeaponCheckEmpty()
 {
-	if (CurrentAmmo <= 0 && (ZSPlayerState->GetTotalAmmo(WeaponData->WeaponType) > 0 || WeaponData->bIsInfiniteAmmo)) 
+	if (CurrentAmmo <= 0 && (ZSPlayerState->GetTotalAmmo(WeaponData->WeaponType) > 0 || WeaponData->bIsInfiniteAmmo))
+		StartReloadWeapon();
+}
+
+void AWeaponBase::ManualWeaponReload()
+{
+	if (WeaponState == EWeaponState::Reloading) return;
+	if (CurrentAmmo < WeaponData->AmmoPerMag && (ZSPlayerState->GetTotalAmmo(WeaponData->WeaponType) > 0 || WeaponData->bIsInfiniteAmmo))
 		StartReloadWeapon();
 }
 
@@ -208,17 +213,19 @@ void AWeaponBase::WeaponFireOnLineTrace()
 
 	FVector TraceStart = WeaponMeshComponent->GetSocketLocation(MuzzleSocket);
 
-	FVector TraceEnd = ZSPlayer->GetMouseLocation(); 
+	FVector TraceEnd = TraceStart + (GetActorForwardVector() * 1000);
+	//FVector TraceEnd = ZSPlayer->GetMouseLocation(); 
 	// If we hit a surface, cache the location
-	if (TraceEnd == FVector::ZeroVector)
+	/*if (TraceEnd == FVector::ZeroVector)
 	{
 		TraceEnd = TraceStart + (GetActorForwardVector() * 1000);
 	}
 	else
 	{
+		TraceEnd.Z = TraceStart.Z;
 		FVector NewDirection = TraceEnd - TraceStart;
 		TraceEnd = ((NewDirection.Dot(GetActorForwardVector()) > 1) ? 1 : -1) * (TraceEnd - TraceStart) * 1000;
-	}
+	}*/
 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
@@ -251,7 +258,7 @@ void AWeaponBase::WeaponFireOnLineTrace()
 			if (isHitEnemy) 
 			{
 				AController* PlayerController = Owner->GetInstigatorController();
-				UGameplayStatics::ApplyPointDamage(Hit.GetActor(), WeaponData->BaseDamage,Hit.ImpactPoint, Hit, PlayerController, this, UDamageType::StaticClass());
+				UGameplayStatics::ApplyPointDamage(Hit.GetActor(), WeaponData->BaseDamage,Hit.ImpactPoint, Hit, PlayerController, Owner, UDamageType::StaticClass());
 			}
 		}
 	}
@@ -305,8 +312,9 @@ void AWeaponBase::ReloadWeapon()
 		CurrentAmmo = WeaponData->AmmoPerMag;
 	else 
 	{
-		CurrentAmmo = fmin(ZSPlayerState->GetTotalAmmo(WeaponData->WeaponType), WeaponData->AmmoPerMag);
-		ZSPlayerState->CalculateAmmo(WeaponData->WeaponType, WeaponData->AmmoPerMag);
+		int needAmmo = FMath::Min(ZSPlayerState->GetTotalAmmo(WeaponData->WeaponType), WeaponData->AmmoPerMag - CurrentAmmo);
+		CurrentAmmo += needAmmo;
+		ZSPlayerState->CalculateAmmo(WeaponData->WeaponType, needAmmo);
 	}
 	WeaponState = EWeaponState::Holding;
 	if (isFiringCached && WeaponData->WeaponType != EWeaponType::GrenadeLauncher)

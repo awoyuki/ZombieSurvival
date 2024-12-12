@@ -1,4 +1,6 @@
 #include "ZS_Player.h"
+#include <Sound/SoundCue.h>
+#include <Kismet/GameplayStatics.h>
 #include "ZombieSurvival/Item/WeaponBase.h"
 #include "ZombieSurvival/PoolingSystem/PoolSubsystem.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -29,11 +31,7 @@ void AZS_Player::BeginPlay()
 	if (DefaultWeaponData == nullptr)
 		return;
 
-	AWeaponBase* NewWeapon = PoolSubsystem->SpawnFromPool<AWeaponBase>(AWeaponBase::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
-	if (IsValid(NewWeapon)) {
-		PickupWeapon(NewWeapon);
-		NewWeapon->OnEquippedWeapon(this, DefaultWeaponData);
-	}
+	PickUpWeapon_Implementation(DefaultWeaponData);
 }
 
 // Called every frame
@@ -44,12 +42,15 @@ void AZS_Player::Tick(float DeltaTime)
 
 void AZS_Player::OnPlayerMouseStart()
 {
-	if (!IsValid(CurrentWeapon) || ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Stunned)  return;
+	if (ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Default)
+	{
+		if (!IsValid(CurrentWeapon))  return;
 
-	if (CurrentWeapon->WeaponData->WeaponType == EWeaponType::AssaultRifle)
-		CurrentWeapon->WeaponFire();
-	else
-		CurrentWeapon->WeaponCharge();
+		if (CurrentWeapon->WeaponData->WeaponType == EWeaponType::AssaultRifle)
+			CurrentWeapon->WeaponFire();
+		else
+			CurrentWeapon->WeaponCharge();
+	}
 }
 
 void AZS_Player::OnPlayerMouseEnd()
@@ -67,14 +68,41 @@ void AZS_Player::OnPlayerMouseEnd()
 
 void AZS_Player::OnPlayerChangeWeapon()
 {
-	if (Weapons.Num() <= 1 && ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Stunned)
+	if (Weapons.Num() <= 1)
 		return;
-	int NewWeaponIndex = Weapons.FindLast(CurrentWeapon);
-	NewWeaponIndex = (NewWeaponIndex + 1) % Weapons.Num();
-	CurrentWeapon->OnStoredWeapon();
-	CurrentWeapon = Weapons[NewWeaponIndex];
-	CurrentWeapon->OnSwitchWeapon();
-	HideCursorVFX();
+	if (ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Default)
+	{
+		int NewWeaponIndex = Weapons.FindLast(CurrentWeapon);
+		NewWeaponIndex = (NewWeaponIndex + 1) % Weapons.Num();
+		CurrentWeapon->OnStoredWeapon();
+		CurrentWeapon = Weapons[NewWeaponIndex];
+		CurrentWeapon->OnSwitchWeapon();
+		HideCursorVFX();
+	}
+}
+
+void AZS_Player::OnPlayerDead()
+{
+	Super::OnPlayerDead();
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathSound, GetActorLocation());
+	GetMesh()->SetSimulatePhysics(true);
+	OnPlayerMouseEnd();
+	auto ZGameState = UGameplayStatics::GetGameState(GetWorld());
+	if (ZGameState->GetClass()->ImplementsInterface(UIZSGameState::StaticClass()))
+	{
+		IIZSGameState::Execute_SetGameStatus(ZGameState, EGameStatus::Lose);
+	}
+}
+
+void AZS_Player::OnPlayerReload()
+{
+	if (CurrentWeapon == nullptr)
+		return;
+	if (ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Default)
+	{
+		CurrentWeapon->ManualWeaponReload();
+		HideCursorVFX();
+	}
 }
 
 void AZS_Player::Stunned()
@@ -138,6 +166,18 @@ void AZS_Player::HideCursorVFX()
 	}
 }
 
+void AZS_Player::PickupKey()
+{
+	Keys++;
+}
+
+int AZS_Player::UseKey()
+{
+	int keyUsed = Keys;
+	Keys = 0;
+	return keyUsed;
+}
+
 void AZS_Player::Healing(float Value)
 {
 	ZSPlayerState->SetHealth(ZSPlayerState->GetHealth() + Value);
@@ -171,10 +211,20 @@ int AZS_Player::GetCurrentWeaponAmmo()
 	return CurrentWeapon->CurrentAmmo;
 }
 
-
-
-void AZS_Player::PickupWeapon(AWeaponBase* NewWeapon)
+AWeaponBase* AZS_Player::GetCurrentWeapon_Implementation()
 {
+	if (CurrentWeapon == nullptr)
+		return nullptr;
+
+	return CurrentWeapon;
+}
+
+void AZS_Player::PickUpWeapon_Implementation(UWeaponData* NewWeaponData)
+{
+	AWeaponBase* NewWeapon = GetWorld()->GetSubsystem<UPoolSubsystem>()->SpawnFromPool<AWeaponBase>(AWeaponBase::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
+	if (IsValid(NewWeapon)) {
+		NewWeapon->OnEquippedWeapon(this, NewWeaponData);
+	}
 	NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
 	NewWeapon->SetOwner(this);
 	Weapons.Add(NewWeapon);
@@ -186,11 +236,15 @@ void AZS_Player::PickupWeapon(AWeaponBase* NewWeapon)
 
 float AZS_Player::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, TEXT("Player Get Zombie Hit!"));
 	float Health = ZSPlayerState->GetHealth();
-	if(Health > 0)
+	if (Health > 0)
+	{
 		ZSPlayerState->SetHealth(FMath::Clamp(Health - DamageAmount, 0, ZSPlayerState->GetMaxHealth()));
-
+		if(ZSPlayerState->GetHealth() <= 0)
+			OnPlayerDead();
+		else
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), HitSound, GetActorLocation());
+	}
 	return DamageAmount;
 }
 

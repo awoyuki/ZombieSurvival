@@ -15,9 +15,10 @@ UBTTask_WaitForAttack::UBTTask_WaitForAttack(FObjectInitializer const& ObjectIni
 
 void UBTTask_WaitForAttack::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
-	if (AZS_ZombieBase* Enemy = Cast<AZS_ZombieBase>(OwnerComp.GetAIOwner()->GetPawn()))
+	auto Enemy = OwnerComp.GetAIOwner()->GetPawn();
+	if (Enemy->GetClass()->ImplementsInterface(UIZSEnemy::StaticClass()))
 	{
-		Enemy->SetEnemyState(EEnemyState::Idle);
+		IIZSEnemy::Execute_SetEnemyStateInterface(Enemy, EEnemyState::Idle);
 		OwnerComp.GetBlackboardComponent()->SetValueAsBool("InAttackRange", false);
 	}
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);

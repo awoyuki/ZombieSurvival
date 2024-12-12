@@ -19,14 +19,10 @@ UBTTask_ChasePlayer::UBTTask_ChasePlayer(FObjectInitializer const& ObjectInitial
 EBTNodeResult::Type UBTTask_ChasePlayer::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	// get target location from blackbroard via the EnemyController
-	if (auto* EnemyController = Cast<AZS_AIController>(OwnerComp.GetAIOwner()))
-	{
-		auto PlayerLocation = OwnerComp.GetBlackboardComponent()->GetValueAsVector(GetSelectedBlackboardKey());
-		// Move to player location
-		EnemyController->MoveToLocation(PlayerLocation);
-		// FinishWithSuccess
-		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
-		return EBTNodeResult::Succeeded;
-	}
-	return EBTNodeResult::Failed;
+	auto PlayerLocation = OwnerComp.GetBlackboardComponent()->GetValueAsVector(GetSelectedBlackboardKey());
+	// Move to player location
+	OwnerComp.GetAIOwner()->MoveToLocation(PlayerLocation);
+	// FinishWithSuccess
+	FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+	return EBTNodeResult::Succeeded;
 }

@@ -3,6 +3,7 @@
 
 #include "LevelController.h"
 #include "Kismet/GameplayStatics.h"
+#include "ZombieSurvival/Framework/ZombieSurvivalGameState.h"
 #include "BaseItem.h"
 
 // Sets default values
@@ -65,4 +66,17 @@ void ALevelController::SpawnRandomItem(FVector Location)
 
     auto Item = GetWorld()->GetSubsystem<UPoolSubsystem>()->SpawnFromPool<ABaseItem>(ClassType->ItemClass, Location, FRotator::ZeroRotator);
     Item->OnItemSpawn();
+}
+
+void ALevelController::OnPlayerGetOverZone()
+{
+    for (int i = 0; i < ZombieSpawn.Num(); i++)
+    {
+        ZombieSpawn[i]->KillZombie();
+    }
+    auto ZSGameState = UGameplayStatics::GetGameState(GetWorld());
+    if (ZSGameState->GetClass()->ImplementsInterface(UIZSGameState::StaticClass()))
+    {
+        IIZSGameState::Execute_LoadNextZone(ZSGameState);
+    }
 }

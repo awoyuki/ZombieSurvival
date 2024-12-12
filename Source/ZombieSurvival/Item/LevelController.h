@@ -54,4 +54,7 @@ public:
 
 	EItemType RollSingleItem();
 	void SpawnRandomItem(FVector Location);
+
+	UFUNCTION(BlueprintCallable)
+	void OnPlayerGetOverZone();
 };

@@ -51,9 +51,10 @@ EBTNodeResult::Type UBTTask_FindPlayerLocation::ExecuteTask(UBehaviorTreeCompone
 		else
 		{
 			// EnemyBehaviour
-			if (auto* Enemy = Cast<AZS_ZombieBase>(OwnerComp.GetAIOwner()->GetPawn()))
+			auto Enemy = OwnerComp.GetAIOwner()->GetPawn();
+			if (Enemy->GetClass()->ImplementsInterface(UIZSEnemy::StaticClass()))
 			{
-				Enemy->SetEnemyState(EEnemyState::Chasing);
+				IIZSEnemy::Execute_SetEnemyStateInterface(Enemy, EEnemyState::Chasing);
 			}
 			OwnerComp.GetBlackboardComponent()->SetValueAsVector(GetSelectedBlackboardKey(), PlayerLocation);
 			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);

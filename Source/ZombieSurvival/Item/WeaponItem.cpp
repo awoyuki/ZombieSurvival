@@ -39,13 +39,8 @@ void AWeaponItem::OnConstruction(const FTransform& Transform)
 void AWeaponItem::OnPlayerOverlap_Implementation(AActor* PlayerActor)
 {
 	Super::OnPlayerOverlap_Implementation(PlayerActor);
-	if (AZS_Player* Player = CastChecked<AZS_Player>(PlayerActor)) 
+	if (PlayerActor->GetClass()->ImplementsInterface(UIZSCharacter::StaticClass()))
 	{
-		AWeaponBase* NewWeapon = PoolSubsystem->SpawnFromPool<AWeaponBase>(AWeaponBase::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
-		if (IsValid(NewWeapon)) {
-			Player->PickupWeapon(NewWeapon);
-			NewWeapon->OnEquippedWeapon(Player, WeaponData);
-		}
-	};
-	
+		IIZSCharacter::Execute_PickUpWeapon(PlayerActor, WeaponData);
+	}	
 }

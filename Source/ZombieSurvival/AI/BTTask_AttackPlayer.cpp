@@ -2,8 +2,10 @@
 
 
 #include "BTTask_AttackPlayer.h"
+#include "ZombieSurvival/Interface/IZSEnemy.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
@@ -27,38 +29,30 @@ EBTNodeResult::Type UBTTask_AttackPlayer::ExecuteTask(UBehaviorTreeComponent& Ow
 
 	if (auto* Player = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))
 	{
-		if (auto* EnemyController = Cast<AZS_AIController>(OwnerComp.GetAIOwner()))
+		auto Enemy = OwnerComp.GetAIOwner()->GetPawn();		
+		if (Enemy->GetClass()->ImplementsInterface(UIZSEnemy::StaticClass()))
 		{
-			if (AZS_ZombieBase* Enemy = Cast<AZS_ZombieBase>(OwnerComp.GetAIOwner()->GetPawn()))
+			// Get Player
+			if (auto* Target = OwnerComp.GetBlackboardComponent()->GetValueAsObject("TargetActor"))
 			{
-				// Get Player
-				if (auto* Target = OwnerComp.GetBlackboardComponent()->GetValueAsObject("TargetActor"))
+				if (auto* PlayerTarget = Cast<ACharacter>(Target))
 				{
-					if (auto* PlayerTarget = Cast<ACharacter>(Target))
-					{
-						Player = PlayerTarget;
-					}
+					Player = PlayerTarget;
 				}
-				if (DoesMontageFinish(Enemy)) 
-				{
-					// Stop
-					EnemyController->StopMovement();
-					// Then Attack
-					Enemy->SetEnemyState(EEnemyState::Attack);
-					// FinishWithSuccess
-					OwnerComp.GetBlackboardComponent()->SetValueAsFloat("AttackTime", Enemy->GetCurrentAttackAnimationDuration());
-					FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
-					return EBTNodeResult::Succeeded;
-				}
+			}
+			if (IIZSEnemy::Execute_DoesCurrentMontageFinish(Enemy))
+			{
+				// Stop
+				OwnerComp.GetAIOwner()->StopMovement();
+				// Then Attack
+				IIZSEnemy::Execute_SetEnemyStateInterface(Enemy, EEnemyState::Attack);
+				// FinishWithSuccess
+				OwnerComp.GetBlackboardComponent()->SetValueAsFloat("AttackTime", IIZSEnemy::Execute_GetCurrentAttackAnimationDuration(Enemy));
+				FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+				return EBTNodeResult::Succeeded;
 			}
 		}
 	}
 	return EBTNodeResult::Failed;
 }
 
-
-
-bool UBTTask_AttackPlayer::DoesMontageFinish(AZS_ZombieBase* Enemy)
-{
-	return Enemy->DoesCurrentMontageFinish();
-}

@@ -41,4 +41,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Data")
 	float MovementSpeed = 300;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy Data")
+	USoundWave* HitSound;
 };

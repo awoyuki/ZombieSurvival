@@ -22,27 +22,28 @@ void UBTService_IsPlayerInAttackRange::OnBecomeRelevant(UBehaviorTreeComponent& 
 {
 	Super::OnBecomeRelevant(OwnerComp, NodeMemory);
 
-	AZS_AIController* EnemyController = Cast<AZS_AIController>(OwnerComp.GetAIOwner());
 	if (auto* Player = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))
 	{
 		// EnemyBehaviour
-		if (AZS_ZombieBase* Enemy = Cast<AZS_ZombieBase>(OwnerComp.GetAIOwner()->GetPawn()))
+		auto Enemy = OwnerComp.GetAIOwner()->GetPawn();
+		if (Enemy->GetClass()->ImplementsInterface(UIZSEnemy::StaticClass())) 
 		{
-			Enemy->SetEnemyState(EEnemyState::Chasing);
+			IIZSEnemy::Execute_SetEnemyStateInterface(Enemy, EEnemyState::Chasing);
 			// Get Player
 			if (auto* Target = OwnerComp.GetBlackboardComponent()->GetValueAsObject("TargetActor"))
 			{
-				if (auto* PlayerTarget = Cast<ACharacter>(Target))
+				if (Target->GetClass()->ImplementsInterface(UIZSCharacter::StaticClass()))
 				{
-					Player = PlayerTarget;
+					Player = Cast<ACharacter>(Target);
 				}
 			}
-			if (auto* ZSPlayer = Cast<AZombieSurvivalCharacter>(Player)) 
+			if (Player->GetClass()->ImplementsInterface(UIZSCharacter::StaticClass()))
 			{
-				EnemyController->GetBlackboardComponent()->SetValueAsBool(GetSelectedBlackboardKey(), Enemy->GetDistanceTo(Player) <= Enemy->CurrentAttackRange &&
-					EnemyController->GetBlackboardComponent()->GetValueAsBool("CanSeePlayer") && !ZSPlayer->IsDead()
-				);
-			}				
+				bool isPlayerDead = IIZSCharacter::Execute_IsDead(Player);
+				float CurrentAttackRange = IIZSEnemy::Execute_GetCurrentAttackRange(Enemy);
+				OwnerComp.GetAIOwner()->GetBlackboardComponent()->SetValueAsBool(GetSelectedBlackboardKey(), Enemy->GetDistanceTo(Player) <= CurrentAttackRange &&
+					OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsBool("CanSeePlayer") && !isPlayerDead);
+			}
 		}
 	}
 }

@@ -71,6 +71,7 @@ public:
 
 private:
 
+
 	void FiringWeapon();
 
 	void ReloadWeapon();
@@ -94,6 +95,8 @@ public:
 	void ActiveWeapon(bool bActive);
 
 	void WeaponCheckEmpty(); 
+
+	void ManualWeaponReload(); 
 
 	void WeaponFire(); 
 

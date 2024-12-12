@@ -26,6 +26,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "APlayerZS")
 	UParticleSystemComponent* StunVFX;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "APlayerZS")
+	USoundCue* DeathSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "APlayerZS")
+	USoundWave* HitSound;
+
 	/** FX Class that we will spawn */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "APlayerZS")
 	UNiagaraSystem* FXCursor;
@@ -38,6 +44,9 @@ public:
 
 	// Current Weapon in use
 	AWeaponBase* CurrentWeapon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "APlayerZS")
+	int Keys;
 
 	// List of weapon
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -58,8 +67,6 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void PickupWeapon(AWeaponBase* NewWeapon);
-
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	
 	virtual void OnPlayerMouseStart() override;
@@ -67,6 +74,10 @@ public:
 	virtual void OnPlayerMouseEnd() override;
 
 	virtual void OnPlayerChangeWeapon() override;
+
+	virtual void OnPlayerDead() override;
+
+	virtual void OnPlayerReload() override;
 
 	virtual void OnPlayerStunned(float StunTime);
 
@@ -79,6 +90,12 @@ public:
 	virtual void UpdateCursorVFXLocation();
 
 	virtual void HideCursorVFX();
+
+	UFUNCTION(BlueprintCallable)
+	void PickupKey();
+
+	UFUNCTION(BlueprintCallable)
+	int UseKey();
 
 	UFUNCTION(BlueprintCallable)
 	void Healing(float Value);
@@ -94,5 +111,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetCurrentWeaponAmmo();
+
+	virtual AWeaponBase* GetCurrentWeapon_Implementation() override;
+
+	virtual void PickUpWeapon_Implementation(UWeaponData* NewWeaponData) override;
 
 };

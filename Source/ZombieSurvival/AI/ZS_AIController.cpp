@@ -39,9 +39,9 @@ void AZS_AIController::SetupPerceptionSystem()
 	if(SightConfig)
 	{
 		SetPerceptionComponent(*CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("Perception Component")));
-		SightConfig->SightRadius = 500.0f;
+		SightConfig->SightRadius = 1000.0f;
 		SightConfig->LoseSightRadius = SightConfig->SightRadius + 25.0f;
-		SightConfig->PeripheralVisionAngleDegrees = 90.0f;
+		SightConfig->PeripheralVisionAngleDegrees = 360.0f;
 		SightConfig->SetMaxAge(5.0f);
 		SightConfig->AutoSuccessRangeFromLastSeenLocation = 520.f;
 		SightConfig->DetectionByAffiliation.bDetectEnemies = true;
@@ -64,9 +64,4 @@ void AZS_AIController::OnTargetDetected(AActor* Actor, FAIStimulus const Stimulu
 		GetBlackboardComponent()->SetValueAsBool("CanSeePlayer", Stimulus.WasSuccessfullySensed());
 		GetBlackboardComponent()->SetValueAsObject("TargetActor", Actor);
 	}
-}
-
-void AZS_AIController::ResetPerceptionSystem()
-{
-	GetBlackboardComponent()->SetValueAsBool("CanSeePlayer", false);
 }

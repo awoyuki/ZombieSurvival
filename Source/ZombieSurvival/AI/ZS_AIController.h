@@ -36,5 +36,4 @@ private:
 	UFUNCTION()
 	void OnTargetDetected(AActor* Actor, FAIStimulus const Stimulus);
 
-	void ResetPerceptionSystem();
 };

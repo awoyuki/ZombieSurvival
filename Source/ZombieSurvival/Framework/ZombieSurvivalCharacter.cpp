@@ -55,7 +55,6 @@ AZombieSurvivalCharacter::AZombieSurvivalCharacter()
 void AZombieSurvivalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	ZSGameState = Cast<AZombieSurvivalGameState>(GetWorld()->GetGameState());
 	ZSPlayerState = Cast<AZombieSurvivalPlayerState>(GetPlayerState());
 	PlayerController = Cast<APlayerController>(Controller);
 	//Add Input Mapping Context
@@ -81,6 +80,7 @@ void AZombieSurvivalCharacter::SetupPlayerInputComponent(class UInputComponent* 
 		// Setup mouse input events
 		EnhancedInputComponent->BindAction(InputMoveAction, ETriggerEvent::Triggered, this, &AZombieSurvivalCharacter::OnPlayerMove);
 		EnhancedInputComponent->BindAction(InputChangeWeaponAction, ETriggerEvent::Started, this, &AZombieSurvivalCharacter::OnPlayerChangeWeapon);
+		EnhancedInputComponent->BindAction(InputReloadAction, ETriggerEvent::Started, this, &AZombieSurvivalCharacter::OnPlayerReload);
 		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Started, this, &AZombieSurvivalCharacter::OnPlayerMouseStart);
 		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Completed, this, &AZombieSurvivalCharacter::OnPlayerMouseEnd);
 		EnhancedInputComponent->BindAction(InputMouseAction, ETriggerEvent::Canceled, this, &AZombieSurvivalCharacter::OnPlayerMouseEnd);
@@ -120,12 +120,6 @@ float AZombieSurvivalCharacter::PlayAnimMontage(class UAnimMontage* AnimMontage,
 	return 0.f;
 }
 
-bool AZombieSurvivalCharacter::IsDead()
-{
-	return ZSPlayerState->GetHealth() <= 0;
-}
-
-
 
 void AZombieSurvivalCharacter::OnPlayerMove(const FInputActionValue& value)
 {
@@ -146,18 +140,27 @@ void AZombieSurvivalCharacter::OnPlayerMove(const FInputActionValue& value)
 
 void AZombieSurvivalCharacter::OnPlayerMouseStart()
 {
+	if (ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Dead) return;
 }
 
 void AZombieSurvivalCharacter::OnPlayerMouseEnd()
 {
+	if (ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Dead) return;
 }
 
 void AZombieSurvivalCharacter::OnPlayerChangeWeapon()
 {
+	if (ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Dead) return;
+}
+
+void AZombieSurvivalCharacter::OnPlayerReload()
+{
+	if (ZSPlayerState->GetPlayerStatus() == EPlayerStatus::Dead) return;
 }
 
 void AZombieSurvivalCharacter::OnPlayerDead()
 {
+	ZSPlayerState->SetPlayerStatus(EPlayerStatus::Dead);
 	if (StimulusSource)
 	{
 		StimulusSource->UnregisterFromSense(TSubclassOf<UAISense_Sight>());
@@ -173,6 +176,11 @@ void AZombieSurvivalCharacter::FixPlayerRotation()
 		const FQuat newQuat = (FRotator(0, rotateAngle - (rotateAngle < -90 ? (-90) : 90), 0)).Quaternion();
 		AddActorLocalRotation(newQuat);
 	}
+}
+
+bool AZombieSurvivalCharacter::IsDead_Implementation()
+{
+	return ZSPlayerState->GetHealth() <= 0;
 }
 
 void AZombieSurvivalCharacter::SetupStimulusSource()

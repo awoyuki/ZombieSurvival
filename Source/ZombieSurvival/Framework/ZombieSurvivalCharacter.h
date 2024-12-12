@@ -7,10 +7,11 @@
 #include "GameFramework/Character.h"
 #include "ZombieSurvival/Framework/ZombieSurvivalGameState.h"
 #include "ZombieSurvival/Framework/ZombieSurvivalPlayerState.h"
+#include "ZombieSurvival/Interface/IZSCharacter.h"
 #include "ZombieSurvivalCharacter.generated.h"
 
 UCLASS(Blueprintable)
-class AZombieSurvivalCharacter : public ACharacter
+class AZombieSurvivalCharacter : public ACharacter, public IIZSCharacter
 {
 	GENERATED_BODY()
 
@@ -50,9 +51,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* InputMouseAction;
 
-	/** Mouse Input Action */
+	/** Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* InputChangeWeaponAction;
+
+	/** Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* InputReloadAction;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Property)
 	double AngularDistanceBetweenPlayerAndCursor();
@@ -61,10 +66,7 @@ public:
 
 	FVector GetMouseLocation();
 
-	bool IsDead();
-
 	// Cached Game Variables
-	AZombieSurvivalGameState* ZSGameState;
 	AZombieSurvivalPlayerState* ZSPlayerState;
 
 
@@ -84,9 +86,13 @@ protected:
 
 	virtual void OnPlayerChangeWeapon();
 
+	virtual void OnPlayerReload();
+
 	virtual void OnPlayerDead();
 
 	virtual void FixPlayerRotation();
+
+	virtual bool IsDead_Implementation() override;
 
 	class UAIPerceptionStimuliSourceComponent* StimulusSource;
 

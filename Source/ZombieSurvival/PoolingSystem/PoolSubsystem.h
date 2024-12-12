@@ -68,10 +68,20 @@ inline T* UPoolSubsystem::SpawnFromPool(TSubclassOf<AActor> PoolClass, FVector L
 		}
 		else
 		{
-			PooledActor = CastChecked<T>(ObjectPool.Pop());
-			PooledActor->SetActorLocationAndRotation(Location, Rotation);
-			PooledActor->SetActorEnableCollision(true);
-			PooledActor->SetActorHiddenInGame(false);
+			if (IsValid(ObjectPool.Pop()))
+			{
+				PooledActor = CastChecked<T>(ObjectPool.Pop());
+				PooledActor->SetActorLocationAndRotation(Location, Rotation);
+				PooledActor->SetActorEnableCollision(true);
+				PooledActor->SetActorHiddenInGame(false);
+			}
+			// If destroyed by KillZ -> Spawn new one;
+			else 
+			{
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+				PooledActor = GetWorld()->SpawnActor<T>(PoolClass, Location, Rotation, SpawnParams);
+			}
 		}
 
 		IPoolable::Execute_OnSpawnFromPool(PooledActor);

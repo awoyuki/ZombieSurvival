@@ -12,7 +12,8 @@ UENUM(BlueprintType)
 enum class EPlayerStatus : uint8
 {
 	Default UMETA(DisplayName = "Default"),
-	Stunned UMETA(DisplayName = "Stunned")
+	Stunned UMETA(DisplayName = "Stunned"),
+	Dead UMETA(DisplayName = "Dead")
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHealthDelegate, float, NewHealth);
@@ -39,10 +40,10 @@ protected:
 	EPlayerStatus PlayerStatus;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Stored Data")
-	int TotalRifleAmmo = 90;
+	int TotalRifleAmmo = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Stored Data")
-	int TotalGrenadeAmmo = 12;
+	int TotalGrenadeAmmo = 0;
 
 
 public:

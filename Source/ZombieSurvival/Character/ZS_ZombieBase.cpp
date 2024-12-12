@@ -2,6 +2,7 @@
 #include "ZS_ZombieBase.h"
 #include "Ability/EnemyAbilityBase.h"
 #include "Components/WidgetComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "ZombieSurvival/AI/ZS_AIController.h"
@@ -47,7 +48,7 @@ void AZS_ZombieBase::BeginPlay()
 {
 	Super::BeginPlay();
 	AIZSController = Cast<AZS_AIController>(GetController());
-	OnSpawnEnemy(EnemyData);
+	InitPosition = GetMesh()->GetRelativeTransform();
 }
 
 // Called every frame
@@ -68,6 +69,7 @@ void AZS_ZombieBase::OnInitEnemy(bool bIsContruction)
 		return;
 
 	CurrentHealth = EnemyData->Health;
+
 	GetMesh()->ResetAllBodiesSimulatePhysics();
 	GetMesh()->SetSkeletalMesh(EnemyData->Mesh);	
 
@@ -85,11 +87,28 @@ void AZS_ZombieBase::OnInitEnemy(bool bIsContruction)
 
 void AZS_ZombieBase::OnSpawnEnemy(UEnemyData* NewData)
 {
-	EnemyData = NewData;
+	if(NewData)
+		EnemyData = NewData;
+
+	if (GetMesh()->IsSimulatingPhysics() || CurrentState == EEnemyState::Death)
+	{
+		CurrentState = EEnemyState::Idle;
+		GetMesh()->SetSimulatePhysics(false);
+		GetMesh()->SetRelativeTransform(InitPosition);
+		GetMesh()->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		AIZSController->GetBlackboardComponent()->SetValueAsEnum("EnemyState", (uint8)CurrentState);
+		AIZSController->GetBlackboardComponent()->SetValueAsBool("CanSeePlayer", false);
+	}
+
 	OnInitEnemy(false);
 	HealthBar->SetVisibility(true);
-	CurrentState = EEnemyState::Idle;
 	SelectAbility();
+}
+
+EEnemyState AZS_ZombieBase::GetEnemyState_Implementation()
+{
+	return CurrentState;
 }
 
 void AZS_ZombieBase::SetEnemyState(EEnemyState newState)
@@ -112,6 +131,12 @@ void AZS_ZombieBase::SetEnemyState(EEnemyState newState)
 		break;
 	}
 }
+
+void AZS_ZombieBase::SetEnemyStateInterface_Implementation(EEnemyState newState)
+{
+	SetEnemyState(newState);
+}
+
 
 void AZS_ZombieBase::SelectAbility()
 {
@@ -144,17 +169,20 @@ void AZS_ZombieBase::EnemyPatrol()
 	GetCharacterMovement()->MaxWalkSpeed = 125;
 	GetMesh()->GetAnimInstance()->Montage_Stop(0.1f); 
 }
+
 void AZS_ZombieBase::EnemyChase()
 {
 	GetCharacterMovement()->MaxWalkSpeed = EnemyData ? EnemyData->MovementSpeed : 300;
 	GetMesh()->GetAnimInstance()->Montage_Stop(0.1f);
 }
+
 void AZS_ZombieBase::EnemyAttack()
 {
 	if(CurrentAbility)
 		CurrentAbility->ActiveAbility();
 
 }
+
 void AZS_ZombieBase::EnemyDeath()
 {
 	AIZSController->GetBlackboardComponent()->SetValueAsEnum("EnemyState", (uint8)CurrentState);
@@ -162,6 +190,7 @@ void AZS_ZombieBase::EnemyDeath()
 	GetWorldTimerManager().SetTimer(DeathTimerHandle, this, &AZS_ZombieBase::OnEnemyRemoveFromWorld, 0.1f, false, 3.0f);
 	GetMesh()->GetAnimInstance()->Montage_Stop(0.1f);
 	HealthBar->SetVisibility(false);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	//Call to spawn item 
 	if (auto* ZombieZone = CastChecked<AZombieZone>(GetOwner()))
 	{
@@ -170,7 +199,12 @@ void AZS_ZombieBase::EnemyDeath()
 	}
 }
 
-float AZS_ZombieBase::GetCurrentAttackAnimationDuration()
+float AZS_ZombieBase::GetCurrentAttackRange_Implementation()
+{
+	return CurrentAttackRange;
+}
+
+float AZS_ZombieBase::GetCurrentAttackAnimationDuration_Implementation()
 {
 	UAnimInstance* AnimInstance = (GetMesh()) ? GetMesh()->GetAnimInstance() : nullptr;
 	if (AnimInstance)
@@ -178,13 +212,13 @@ float AZS_ZombieBase::GetCurrentAttackAnimationDuration()
 		UAnimMontage* Montage = AnimInstance->GetCurrentActiveMontage();
 		if (Montage) 
 		{
-			return Montage->GetPlayLength() * AnimInstance->Montage_GetPlayRate(Montage);
+			return Montage->GetPlayLength() / Montage->RateScale;
 		}
 	}
 	return 0;
 }
 
-bool AZS_ZombieBase::DoesCurrentMontageFinish()
+bool AZS_ZombieBase::DoesCurrentMontageFinish_Implementation()
 {
 	UAnimInstance* AnimInstance = (GetMesh()) ? GetMesh()->GetAnimInstance() : nullptr;
 	if (AnimInstance)
@@ -235,6 +269,9 @@ float AZS_ZombieBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	//Knockback
 	LaunchCharacter(HitNormal * DamageAmount * 10, true, true);
 	CurrentHealth = FMath::Max(CurrentHealth - DamageAmount, 0);
+
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), EnemyData->HitSound, GetActorLocation());
+
 	//if Player -> chase to him
 	if (DamageCauser->ActorHasTag("Player")) 
 	{

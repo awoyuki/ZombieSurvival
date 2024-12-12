@@ -4,23 +4,13 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "GameFramework/Character.h"
 #include "ZombieSurvival/PoolingSystem/PoolSubsystem.h"
+#include "ZombieSurvival/Interface/IZSEnemy.h"
 #include "ZombieSurvival/Data/EnemyData.h"
 #include "ZS_ZombieBase.generated.h"
 
 
-UENUM(BlueprintType, Blueprintable)
-enum class EEnemyState : uint8
-{
-	Idle UMETA(DisplayName = "Idle"),
-	Patrol UMETA(DisplayName = "Patrol"),
-	Chasing UMETA(DisplayName = "Chasing"),
-	Attack UMETA(DisplayName = "Attack"),
-	Death UMETA(DisplayName = "Death"),
-};
-
-
 UCLASS(Blueprintable)
-class ZOMBIESURVIVAL_API AZS_ZombieBase : public ACharacter, public IPoolable
+class ZOMBIESURVIVAL_API AZS_ZombieBase : public ACharacter, public IPoolable, public IIZSEnemy
 {
 	GENERATED_BODY()
 
@@ -50,12 +40,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy Property")
 	class UEnemyAbilityBase* CurrentAbility;
 
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy Property")
 	float CurrentDamage = 10;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy Property")
 	float CurrentAttackRange = 100;
+
+	virtual float GetCurrentAttackRange_Implementation() override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -68,9 +59,10 @@ protected:
 
 	// Cached Framework
 	class AZS_AIController* AIZSController;
+	//Cached Value
+	FTransform InitPosition;
 
-	public:
-
+public:
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -79,7 +71,15 @@ protected:
 
 	virtual void OnSpawnEnemy(UEnemyData* NewData);
 
-	void SetEnemyState(EEnemyState newState);
+	virtual void SetEnemyState(EEnemyState newState);
+
+	virtual bool DoesCurrentMontageFinish_Implementation() override;
+
+	virtual EEnemyState GetEnemyState_Implementation() override;
+
+	virtual void SetEnemyStateInterface_Implementation(EEnemyState newState) override;
+
+	virtual float GetCurrentAttackAnimationDuration_Implementation() override;
 
 	float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName);
 
@@ -102,9 +102,6 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Enemy Actions")
 	void EnemyAttacking();
 
-	float GetCurrentAttackAnimationDuration();
-
-	bool DoesCurrentMontageFinish();
 
 	UBlackboardComponent* GetBlackBoardFromAIController();
 
@@ -113,6 +110,7 @@ protected:
 
 	template<typename T>
 	T* CreateAbility(TSubclassOf<UEnemyAbilityBase> AbilityClass, int index);
+
 
 };
 
