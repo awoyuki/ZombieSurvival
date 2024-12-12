@@ -68,9 +68,10 @@ inline T* UPoolSubsystem::SpawnFromPool(TSubclassOf<AActor> PoolClass, FVector L
 		}
 		else
 		{
-			if (IsValid(ObjectPool.Pop()))
+			auto ActorGet = ObjectPool.Pop();
+			if (ActorGet != nullptr)
 			{
-				PooledActor = CastChecked<T>(ObjectPool.Pop());
+				PooledActor = CastChecked<T>(ActorGet);
 				PooledActor->SetActorLocationAndRotation(Location, Rotation);
 				PooledActor->SetActorEnableCollision(true);
 				PooledActor->SetActorHiddenInGame(false);
@@ -83,10 +84,8 @@ inline T* UPoolSubsystem::SpawnFromPool(TSubclassOf<AActor> PoolClass, FVector L
 				PooledActor = GetWorld()->SpawnActor<T>(PoolClass, Location, Rotation, SpawnParams);
 			}
 		}
-
 		IPoolable::Execute_OnSpawnFromPool(PooledActor);
 	}
-
 	return PooledActor;
 }
 
